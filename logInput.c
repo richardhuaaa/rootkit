@@ -1,6 +1,8 @@
+//TODO: stop including these everywhere..
 #include <linux/module.h>   // For modules
 #include <linux/kernel.h>   // For KERN_INFO
 #include <linux/init.h>     // For init macros
+
 
 #include "logInput.h"
 #include "outputDevice.h"

