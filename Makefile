@@ -1,20 +1,32 @@
-#based on https://www.kernel.org/doc/Documentation/kbuild/modules.txt
+MAKEDIR = $(shell pwd)
+KMAKEDIR = /lib/modules/$(shell uname -r)/build
+MODULE = main
 
-ifneq ($(KERNELRELEASE),)
+obj-m += $(MODULE).o
+main-y += logInput.o outputDevice.o moduleHide.o
+
+
+all:
+	make -C $(KMAKEDIR) M=$(MAKEDIR) modules
+clean:
+	make -C $(KMAKEDIR) M=$(MAKEDIR) clean
+
+install: all
+	insmod ./$(MODULE).ko
+uninstall:
+	rmmod $(MODULE)
+
 
 # kbuild part of makefile
-obj-m  := main.o
-main-y := logInput.o outputDevice.o moduleHide.o
+#obj-m  := main.o
+#main-y := logInput.o outputDevice.o moduleHide.o
 
-else
-# normal makefile
-KDIR ?= /lib/modules/`uname -r`/build
 
-default:
-	$(MAKE) -C $(KDIR) M=$$PWD
+## normal makefile
+#KDIR ?= /lib/modules/`uname -r`/build
 
-# Module specific targets
-genbin:
-	echo "X" > 8123_bin.o_shipped
+#default:
+#	$(MAKE) -C $(KDIR) M=$$PWD
 
-endif
+# TODO: add clean
+
