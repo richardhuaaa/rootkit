@@ -8,7 +8,7 @@
 #include "outputDevice.h"
 
 
-static int __init main_test_init(void) {
+static int __init main_init(void) {
 	
 	//panic();
 	int error;
@@ -31,7 +31,7 @@ static int __init main_test_init(void) {
 	return 0;
 }
 
-static void __exit main_test_exit(void) {
+static void __exit main_exit(void) {
 	/*
 	int error;
 
@@ -56,6 +56,6 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Innocent aut");
 MODULE_DESCRIPTION("This is a perfectly innocent module and has nothing to do with rootkits whatsoever :)");
 
-module_init(main_test_init);
-module_exit(main_test_exit);	 // For init macros
+module_init(main_init);
+module_exit(main_exit);	 // For init macros
 //#include <linux/tty.h> /* console_print() interface */
