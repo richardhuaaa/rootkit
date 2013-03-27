@@ -8,6 +8,7 @@
 #include "outputDevice.h"
 
 int __init logInput_init(void) {
+	printk(KERN_INFO "in unimplemented %s\n", __FUNCTION__);
 	// unimplemented
 	addToOutputDevice("Logging input!");
 	return 0;
