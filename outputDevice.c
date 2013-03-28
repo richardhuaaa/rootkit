@@ -1,4 +1,3 @@
-/*
 #include <linux/module.h>   // For modules
 #include <linux/kernel.h>   // For KERN_INFO
 #include <linux/init.h>     // For init macros
@@ -19,9 +18,5 @@ int __init outputDevice_init(void) {
 int __exit outputDevice_exit(void) {
 	return 0; // unimplemented
 }
-
-
-*/
-
 
 

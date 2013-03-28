@@ -7,7 +7,6 @@
 #include "moduleHide.h"
 #include "outputDevice.h"
 
-
 static int __init main_init(void) {
 	
 	//panic();
