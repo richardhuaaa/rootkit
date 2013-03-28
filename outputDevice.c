@@ -1,16 +1,23 @@
 // TODO: separate part which puts data to this device e.g. add to buffer etc.. which is planned to be here.
+//TODO: look at http://www.drdobbs.com/open-source/loadable-modules-the-linux-26-kernel/184406112 - regarding module_inc_use_count etc
+// TODO: automatically create the device label etc using the mknod system call after a successful registration and rm during the call to cleanup_module" - using the mknod system call after a successful registration and rm during the call to cleanup_module.
 
-// based on http://www.faqs.org/docs/kernel/x571.html
+
+
+
+// based on http://www.faqs.org/docs/kernel/x571.html /  http://www.tldp.org/LDP/lkmpg/2.6/html/x569.html
 #include <linux/module.h>   // For modules
 #include <linux/kernel.h>   // For KERN_INFO
 #include <linux/module.h>
 
+/*
 #if defined(CONFIG_MODVERSIONS) && ! defined(MODVERSIONS)
 	//#include <linux/modversions.h>
 	#include <config/modversions.h>
 
 	#define MODVERSIONS
 #endif
+*/
 
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -28,6 +35,9 @@ static ssize_t device_write(struct file *, const char *, size_t, loff_t *);
 
 #define SUCCESS 0
 #define DEVICE_NAME "chardev" /// Dev name as it appears in /proc/devices  
+
+static char msg[] = "hello world!";
+static char *msg_Ptr;
 
 
 /* Global variables are declared as static, so are global within the file. */
@@ -59,14 +69,14 @@ int outputDevice_init(void) {
 	printk("<1>I was assigned major number %d.  To talk to\n", Major);
 	printk("<1>the driver, create a dev file with\n");
 		printk("'mknod /dev/hello c %d 0'.\n", Major);
-	printk("<1>Try various minor numbers.  Try to cat and echo to\n");
+	//printk("<1>Try various minor numbers.  Try to cat and echo to\n"); // minor numbers are only used for 
 		printk("the device file.\n");
-	printk("<1>Remove the device file and module when done.\n");
 
 	return 0;
 }
 
 
+// the file may remain until released (see device_release) 
 void outputDevice_exit(void) {
 	unregister_chrdev(Major, DEVICE_NAME);
 }  
@@ -74,11 +84,15 @@ void outputDevice_exit(void) {
 
 // Methods
 static int device_open(struct inode *inode, struct file *file) {
-	static int counter = 0;
 	if (isDeviceAlreadyOpenSoFurtherOpensShouldFail) {
 		return -EBUSY;
 	}
+	 
 	isDeviceAlreadyOpenSoFurtherOpensShouldFail++;
+		
+	try_module_get(THIS_MODULE);
+	
+	msg_Ptr = msg;
 	
 	return SUCCESS;
 }
@@ -87,10 +101,8 @@ static int device_open(struct inode *inode, struct file *file) {
 //  Called when a process closes the device file.
 static int device_release(struct inode *inode, struct file *file) {
 	isDeviceAlreadyOpenSoFurtherOpensShouldFail --;     /* We're now ready for our next caller */
-
-	/* Decrement the usage count, or else once you opened the file, you'll
-		never get get rid of the module. */
-	MOD_DEC_USE_COUNT;
+	// see  http://www.tldp.org/LDP/lkmpg/2.6/html/x569.html  "4.1.4. Unregistering A Device"
+	module_put(THIS_MODULE); //  Decrement the usage count, or else once you opened the file, you'll never get get rid of the module. 
 
 	return 0;
 }
@@ -112,10 +124,10 @@ static ssize_t device_read(struct file *filp,
 
 	/* Actually put the data into the buffer */
 	while (length && *msg_Ptr)  {
-
-	/* The buffer is in the user data segment, not the kernel segment;
+		/* The buffer is in the user data segment, not the kernel segment;
 		* assignment won't work.  We have to use put_user which copies data from
 		* the kernel data segment to the user data segment. */
+		
 		put_user(*(msg_Ptr++), buffer++);
 
 		length--;
