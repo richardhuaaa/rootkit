@@ -2,6 +2,15 @@
 
 
 // based on http://www.faqs.org/docs/kernel/x571.html /  http://www.tldp.org/LDP/lkmpg/2.6/html/x569.html
+
+
+/*
+TODO: use the tty_buffer to buffer data etc. while dealing with concurrency 
+
+tty_buffer is used by drivers/tty/ehv_bytechan for stdout etc.  using this buffer should result in similar performance 
+e.g. same behaviour though operations may be slower
+*/
+
 #include <linux/module.h>   // For modules
 #include <linux/kernel.h>   // For KERN_INFO
 #include <linux/module.h>
@@ -11,6 +20,7 @@
 #include <asm/uaccess.h>  /* for put_user */
 
 #include "outputDevice.h"
+
 
 // Function prototypes
 static int device_open(struct inode *, struct file *);
