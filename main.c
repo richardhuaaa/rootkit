@@ -39,7 +39,7 @@ static void __exit main_exit(void) {
 
 
 // Get rid of taint message
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("GPL"); // note: GPL is required if using the functions create_class / create_device.. (http://forums.fedoraforum.org/showthread.php?t=97742)
 MODULE_AUTHOR("Innocent aut");
 MODULE_DESCRIPTION("This is a perfectly innocent module and has nothing to do with rootkits whatsoever :)");
 
