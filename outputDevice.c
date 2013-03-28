@@ -1,8 +1,4 @@
 // TODO: separate part which puts data to this device e.g. add to buffer etc.. which is planned to be here.
-//TODO: look at http://www.drdobbs.com/open-source/loadable-modules-the-linux-26-kernel/184406112 - regarding module_inc_use_count etc
-// TODO: automatically create the device label etc using the mknod system call after a successful registration and rm during the call to cleanup_module" - using the mknod system call after a successful registration and rm during the call to cleanup_module.
-
-
 
 
 // based on http://www.faqs.org/docs/kernel/x571.html /  http://www.tldp.org/LDP/lkmpg/2.6/html/x569.html
