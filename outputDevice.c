@@ -11,7 +11,7 @@ void addToOutputDevice(char *str) {
 
 
 int __init outputDevice_init(void) {
-	printk(KERN_INFO "in unimplemented %s\n", __FUNCTION__);
+	printk(KERN_INFO "unimplemented %s\n", __FUNCTION__);
 	
 	return 0; // unimplemented
 }
