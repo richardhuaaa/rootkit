@@ -14,6 +14,6 @@ int __init logInput_init(void) {
 	return 0;
 }
 
-int __exit logInput_exit(void) {
-	return 0; // unimplemented
+void __exit logInput_exit(void) {
+	 // unimplemented
 }

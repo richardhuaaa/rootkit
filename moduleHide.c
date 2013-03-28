@@ -8,8 +8,7 @@ int __init moduleHide_init(void) {
 	printk(KERN_INFO "in unimplemented %s\n", __FUNCTION__);
 	return 0; // unimplemented 
 }
-int __exit moduleHide_exit(void) {
-	return 0; // unimplemented 
+void __exit moduleHide_exit(void) {
 }
 
 

