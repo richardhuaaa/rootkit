@@ -27,7 +27,7 @@ static ssize_t device_write(struct file *, const char *, size_t, loff_t *);
 #define CLASS_NAME "outputDeviceClass"
 #define DEVICE_NAME_IN_DEV_DIR DEVICE_NAME
 
-static char msg[] = "hello world!";
+static char msg[] = "hello world!\n";
 static char *msg_Ptr;
 
 struct class *outputDeviceClass;
@@ -79,10 +79,12 @@ int outputDevice_init(void) {
 		return PTR_ERR(outputDeviceDevice);
 	}
 
-
+	/*
 	printk("<1>I was assigned major number %d.  To talk to\n", Major);
 	printk("<1>the driver, create a dev file with\n");
 	printk("'mknod /dev/hello c %d 0'.\n", Major);
+	*/
+	printk(KERN_INFO "created a device: %s\n", DEVICE_NAME_IN_DEV_DIR);
 	//printk("<1>Try various minor numbers.  Try to cat and echo to\n"); // minor numbers are only used for 
 	//printk("the device file.\n");
 
