@@ -9,21 +9,10 @@
 #include <linux/module.h>   // For modules
 #include <linux/kernel.h>   // For KERN_INFO
 #include <linux/module.h>
-
-/*
-#if defined(CONFIG_MODVERSIONS) && ! defined(MODVERSIONS)
-	//#include <linux/modversions.h>
-	#include <config/modversions.h>
-
-	#define MODVERSIONS
-#endif
-*/
-
-#include <linux/kernel.h>
-#include <linux/module.h>
 #include <linux/fs.h>
+#include <linux/err.h>
+#include <linux/device.h>
 #include <asm/uaccess.h>  /* for put_user */
-
 
 #include "outputDevice.h"
 
@@ -34,10 +23,15 @@ static ssize_t device_read(struct file *, char *, size_t, loff_t *);
 static ssize_t device_write(struct file *, const char *, size_t, loff_t *);
 
 #define SUCCESS 0
-#define DEVICE_NAME "chardev" /// Dev name as it appears in /proc/devices  
+#define DEVICE_NAME "rootkitLog" /// Dev name as it appears in /proc/devices  
+#define CLASS_NAME "outputDeviceClass"
+#define DEVICE_NAME_IN_DEV_DIR DEVICE_NAME
 
 static char msg[] = "hello world!";
 static char *msg_Ptr;
+
+struct class *outputDeviceClass;
+struct device *outputDeviceDevice; // TODO: rename these..
 
 
 /* Global variables are declared as static, so are global within the file. */
@@ -58,19 +52,40 @@ void addToOutputDevice(char *str) {
 }
 
 
+/* 
+detection: 
+The device will be registered e.g. a slot in the file table will be there. The only way around this is to perhaps use a large enough number random number that is hard to find
+Though won't work well..
+*/
 int outputDevice_init(void) {
+	// Register the character device and get the major descriptor number
 	Major = register_chrdev(0, DEVICE_NAME, &fops);
 
 	if (Major < 0) {
-		printk ("Registering the character device failed with %d\n", Major);
+		printk (KERN_INFO "Registering the character device failed with %d\n", Major);
 		return Major;
 	}
+	
+	
+	// create the device class / registering in /dev is done for convience. If wanting to hide the rootkit this might not be done.. Though can hide the file there..
+	outputDeviceClass = class_create(THIS_MODULE, CLASS_NAME);
+	if (IS_ERR(outputDeviceClass)) {
+		return PTR_ERR(outputDeviceClass);
+	}
+	
+	outputDeviceDevice = device_create(outputDeviceClass, NULL, MKDEV(Major, 0), NULL, DEVICE_NAME_IN_DEV_DIR);
+	if (IS_ERR(outputDeviceDevice)) {
+		printk(KERN_ERR "failed to create device '%s_%s'\n", CLASS_NAME, DEVICE_NAME); // TODO: add print error function etc..
+		return PTR_ERR(outputDeviceDevice);
+	}
+
 
 	printk("<1>I was assigned major number %d.  To talk to\n", Major);
 	printk("<1>the driver, create a dev file with\n");
-		printk("'mknod /dev/hello c %d 0'.\n", Major);
+	printk("'mknod /dev/hello c %d 0'.\n", Major);
 	//printk("<1>Try various minor numbers.  Try to cat and echo to\n"); // minor numbers are only used for 
-		printk("the device file.\n");
+	//printk("the device file.\n");
+
 
 	return 0;
 }
@@ -78,6 +93,9 @@ int outputDevice_init(void) {
 
 // the file may remain until released (see device_release) 
 void outputDevice_exit(void) {
+	device_destroy(outputDeviceClass, MKDEV(Major, 0));
+	class_destroy(outputDeviceClass);
+	
 	unregister_chrdev(Major, DEVICE_NAME);
 }  
 
