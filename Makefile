@@ -1,4 +1,10 @@
-#makefile with support for multiple files for kernel moduels based on http://www.paguilar.org/blog/?p=7
+# Makefile with support for multiple files for kernel modules based on:
+# http://www.paguilar.org/blog/?p=7
+
+# Make sure you run with sudo if you install/uninstall!
+
+# If it complains about the module not existing when you run install, don't worry - it's just
+# trying to uninstall any previously running instances for you, and will install it for you anyway
 
 PWD = $(shell pwd)
 moduleName = blank
