@@ -12,6 +12,7 @@ int __init logInput_init(void) {
 	// unimplemented
 	addToOutputDevice("Logging input!");
 	return 0;
+//blah
 }
 
 void __exit logInput_exit(void) {
