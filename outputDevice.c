@@ -3,13 +3,8 @@
 
 // based on http://www.faqs.org/docs/kernel/x571.html /  http://www.tldp.org/LDP/lkmpg/2.6/html/x569.html
 
+/// is a tty device different / ...? e.g. what if the user presses back space / will things be displayed in real time / will it matter...?
 
-/*
-TODO: use the tty_buffer to buffer data etc. while dealing with concurrency 
-
-tty_buffer is used by drivers/tty/ehv_bytechan for stdout etc.  using this buffer should result in similar performance 
-e.g. same behaviour though operations may be slower
-*/
 
 #include <linux/module.h>   // For modules
 #include <linux/kernel.h>   // For KERN_INFO
@@ -53,11 +48,6 @@ static struct file_operations fops = {
 };
 
 // Functions
-void addToOutputDevice(char *str) {
-	//TODO: write this!!!!!!!!!!!!!!!!
-}
-
-
 /* 
 detection: 
 The device will be registered e.g. a slot in the file table will be there. The only way around this is to perhaps use a large enough number random number that is hard to find
@@ -71,7 +61,6 @@ int outputDevice_init(void) {
 		printk (KERN_INFO "Registering the character device failed with %d\n", Major);
 		return Major;
 	}
-	
 	
 	// create the device class / registering in /dev is done for convience. If wanting to hide the rootkit this might not be done.. Though can hide the file there..
 	outputDeviceClass = class_create(THIS_MODULE, CLASS_NAME);

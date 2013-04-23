@@ -9,7 +9,7 @@
 PWD = $(shell pwd)
 moduleName = blank
 obj-m += $(moduleName).o
-blank-objs += main.o moduleHide.o outputDevice.o logInput.o 
+blank-objs += main.o moduleHide.o outputDevice.o logInput.o output.o
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(PWD) modules
