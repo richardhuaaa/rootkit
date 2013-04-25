@@ -29,7 +29,6 @@ static ssize_t device_read(struct file *, char *, size_t, loff_t *);
 static ssize_t device_write(struct file *, const char *, size_t, loff_t *);
 
 #define SUCCESS 0
-#define DEVICE_NAME "rootkitLog" /// Dev name as it appears in /proc/devices  
 #define CLASS_NAME "outputDeviceClass"
 #define DEVICE_NAME_IN_DEV_DIR DEVICE_NAME
 
