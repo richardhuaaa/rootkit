@@ -9,12 +9,16 @@
 moduleName = blank
 obj-m += $(moduleName).o
 <<<<<<< HEAD
+<<<<<<< HEAD
 blank-objs += main.o moduleHide.o outputDeviceUsingTTY.o logInput.o output.o
 =======
 blank-objs += main.o fileHide.o moduleHide.o outputDevice.o logInput.o 
 
 PWD = $(shell pwd)
 >>>>>>> ac6e697adaa6a2394cb712da272fe64910605e53
+=======
+blank-objs += main.o moduleHide.o outputDevice.o logInput.o output.o
+>>>>>>> parent of a401c64... trying to get code from example online to compile  - commenting out code
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(PWD) modules
