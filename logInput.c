@@ -9,10 +9,11 @@
 #include <linux/sched.h>
 #include <linux/kallsyms.h>
 
+#include "constants.h"
 #include "logInput.h"
 #include "outputDevice.h"
 
-void **syscallTable;// = (unsigned long *)0xc15d4040;
+void **syscallTable;
 void (*pages_rw)(struct page *page, int numpages) = (void *) 0xc103ac70;
 void (*pages_ro)(struct page *page, int numpages) = (void *) 0xc103ac50;
 
@@ -39,7 +40,7 @@ asmlinkage int readHook(int fd, void* buf, size_t nbytes)
 int __init logInput_init(void) {
 	printk(KERN_INFO "in unimplemented %s\n", __FUNCTION__);
 	
-	syscallTable = (void *)0xc15d4040;
+	syscallTable = (void *) SYSCALL_TABLE;
 	write_cr0 (read_cr0 () & (~ 0x10000));
 	syscallPageTemp = virt_to_page(&syscallTable);
 	pages_rw(syscallPageTemp, 1);

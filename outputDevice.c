@@ -19,6 +19,7 @@ e.g. same behaviour though operations may be slower
 #include <linux/device.h>
 #include <asm/uaccess.h>  /* for put_user */
 
+#include "constants.h"
 #include "outputDevice.h"
 
 
