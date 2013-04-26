@@ -9,7 +9,7 @@
 #include <linux/sched.h>
 #include <linux/kallsyms.h>
 
-#include "constants.h"
+#include "environmentSpecificOptions.h"
 #include "logInput.h"
 #include "outputDevice.h"
 

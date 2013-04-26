@@ -6,24 +6,22 @@
 # If it complains about the module not existing when you run install, don't worry - it's just
 # trying to uninstall any previously running instances for you, and will install it for you anyway
 
+.PHONY: environmentSpecificOptions.h
+
 moduleName = blank
 obj-m += $(moduleName).o
-<<<<<<< HEAD
-<<<<<<< HEAD
-blank-objs += main.o moduleHide.o outputDeviceUsingTTY.o logInput.o output.o
-=======
 blank-objs += main.o fileHide.o moduleHide.o outputDevice.o logInput.o 
 
 PWD = $(shell pwd)
->>>>>>> ac6e697adaa6a2394cb712da272fe64910605e53
-=======
-blank-objs += main.o moduleHide.o outputDevice.o logInput.o output.o
->>>>>>> parent of a401c64... trying to get code from example online to compile  - commenting out code
 
-all:
+all: environmentSpecificOptions.h
 	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(PWD) modules
 clean:
 	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(PWD) clean
+
+environmentSpecificOptions.h: 	 # we probably should avoid the need to be root to compile
+	./getEnvironmentSpecificOptions.sh > environmentSpecificOptions.h
+	
 
 install: all uninstallSilently
 	insmod ./$(moduleName).ko

@@ -5,4 +5,5 @@
 *.mod.*
 *.order
 *.symvers
+environmentSpecificOptions.h
 *~
