@@ -13,7 +13,7 @@
 #include <linux/err.h>
 #include <linux/device.h>
 #include <asm/uaccess.h>  /* for put_user */
-//#include <linux/tty.h>
+#include <linux/tty.h>
 //#include <linux/tty_driver.h>
 
 #include "constants.h"
@@ -49,7 +49,7 @@ static struct file_operations fops = {
 	.release = device_release
 };
 
-//static struct tty_struct ttyInfo;
+static struct tty_struct ttyInfo;
 
 // Functions
 /* 
@@ -58,9 +58,8 @@ The device will be registered e.g. a slot in the file table will be there. The o
 Though won't work well..
 */
 int outputDevice_init(void) {
+	tty_buffer_init(&ttyInfo);
 	//initialize_tty_struct(&ttyInfo, tty_driver *driver, int idx);
-	
-	//void tty_buffer_init(struct tty_struct *tty);
 	
 	
 	// Register the character device and get the major descriptor number
