@@ -17,13 +17,15 @@ static void testBufferIsInitiallyEmpty(void) {
 }
 
 static void testAddingAnElementToTheBuffer(void) {
-	int initialSize = 1;
+	int initialSize = 2;
 	Buffer buffer = createBuffer(initialSize);
 	assert(buffer != NULL);
 	
 	char valueToAdd = 'a';
 	
-	addToBuffer(buffer, valueToAdd);	
+	addToBuffer(buffer, valueToAdd);
+	assert(getAndRemoveFromBuffer(buffer) == valueToAdd); //TODO: write another element first - the buffer may need more elements..
+	
 	
 	destroyBuffer(buffer);
 }

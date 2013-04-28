@@ -2,7 +2,9 @@ typedef struct buffer *Buffer;
 
 typedef char bufferEntry;
 
-Buffer createBuffer(int size);
+
+
+Buffer createBuffer(int size); // one less space is usable...
 void destroyBuffer(Buffer buffer);
 
 

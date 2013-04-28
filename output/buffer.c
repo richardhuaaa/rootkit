@@ -27,7 +27,7 @@ static int getValueIncrementedWrappingToSizeOfBuffer(Buffer buffer, int value);
 
 
 Buffer createBuffer(int size) {
-	assert(size > 0);
+	assert(size > 1);
 	
 	Buffer buffer = malloc(sizeof(struct buffer));
 	if (buffer == NULL) {	
@@ -64,10 +64,9 @@ void addToBuffer(Buffer buffer, bufferEntry valueToAdd) {
 	int expectedOldWritePosition = buffer->writePosition;
 	int nextWritePosition = getValueIncrementedWrappingToSizeOfBuffer(buffer, expectedOldWritePosition);
 	
-	int isFullNow = (expectedOldWritePosition == buffer->readPosition);
-	int wouldAppearEmptyIfAnotherItemWereToBeAdded = (nextWritePosition == buffer->readPosition);
+	int isFullNow = (nextWritePosition == buffer->readPosition);
 	
-	if (!isFullNow && !wouldAppearEmptyIfAnotherItemWereToBeAdded) {
+	if (!isFullNow) {
 		int correctlyGrabbedSpace = __sync_bool_compare_and_swap (&(buffer->writePosition), expectedOldWritePosition, nextWritePosition);
 		
 		if (correctlyGrabbedSpace) {
@@ -84,10 +83,10 @@ bufferEntry getAndRemoveFromBuffer(Buffer buffer) {
 	int expectedOldReadPosition = buffer->readPosition;
 	// reading write position is assumed to be atomic. If write position updates so there is more space this should be ok..
 	
-	int isBufferFullNow = (expectedOldReadPosition == buffer->writePosition);
+	int isBufferEmpty = (expectedOldReadPosition == buffer->writePosition);
 	bufferEntry result;
 	
-	if (isBufferFullNow) {
+	if (isBufferEmpty) {
 		result = VALUE_ON_READ_FAILING;
 	} else {
 		int nextReadPosition = getValueIncrementedWrappingToSizeOfBuffer(buffer, expectedOldReadPosition);
