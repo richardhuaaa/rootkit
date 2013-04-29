@@ -87,17 +87,17 @@ int outputDevice_init(void) {
 	//printk("<1>Try various minor numbers.  Try to cat and echo to\n"); // minor numbers are only used for 
 	//printk("the device file.\n");
 	
-	addToOutputDevice("Log\n");
+	addStringToOutputDevice("Log\n");
 
 	return 0;
 }
 
 
-static void addCharacterToOutputDevice(char ch) {
+void addCharacterToOutputDevice(char ch) {
 	addToBuffer(bufferOfDataWaitingToBeSentToUser, ch);
 }
 
-void addToOutputDevice(char *str) {
+void addStringToOutputDevice(char *str) {
 	while (*str != '\0') {
 		addCharacterToOutputDevice(*str);
 		str++;

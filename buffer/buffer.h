@@ -28,4 +28,4 @@ void addToBuffer(Buffer buffer, bufferEntry valueToAdd);
 char getAndRemoveFromBuffer(Buffer buffer); // returns VALUE_ON_READ_FAILING on failure
 
 
-#define VALUE_ON_READ_FAILING '\0'
+#define VALUE_ON_READ_FAILING '\0' 

@@ -1,6 +1,6 @@
-
-
 int __init outputDevice_init(void);
 void __exit outputDevice_exit(void);
-void addToOutputDevice(char *str); // TODO: move this to output.h
 
+
+void addCharacterToOutputDevice(char ch);
+void addStringToOutputDevice(char *str);
