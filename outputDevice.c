@@ -17,7 +17,6 @@
 #include "buffer/buffer.h"
 
 #define ERROR_CREATING_OUTPUT_DEVICE_RETURN_VALUE 1 // can not be 0
-#define OUTPUT_BUFFER_SIZE 4096 // should be based on size in tty / preferably less than page size.
 
 
 // Function prototypes
@@ -49,7 +48,8 @@ static struct file_operations fops = {
 	.release = device_release
 };
 
-static Buffer buffer = NULL;
+static struct buffer buffer_;
+static Buffer buffer = &buffer_;
 
 // Functions
 /* 
@@ -58,32 +58,24 @@ The device will be registered e.g. a slot in the file table will be there. The o
 Though won't work well..
 */
 int outputDevice_init(void) {	
-	buffer = createBuffer(OUTPUT_BUFFER_SIZE);
-	if (buffer == NULL) {
-		return ERROR_CREATING_OUTPUT_DEVICE_RETURN_VALUE;
-	}
+	buffer_ = createBuffer();
+
 	// Register the character device and get the major descriptor number
 	Major = register_chrdev(0, DEVICE_NAME, &fops);
 
 	if (Major < 0) {
 		printk (KERN_INFO "Registering the character device failed with %d\n", Major);
-		destroyBuffer(buffer); //TODO: extract method
-		buffer = NULL; 
 		return Major;
 	}
 	
 	// create the device class / registering in /dev is done for convience. If wanting to hide the rootkit this might not be done.. Though can hide the file there..
 	outputDeviceClass = class_create(THIS_MODULE, CLASS_NAME);
 	if (IS_ERR(outputDeviceClass)) {
-		destroyBuffer(buffer);
-		buffer = NULL;
 		return PTR_ERR(outputDeviceClass);
 	}
 	
 	outputDeviceDevice = device_create(outputDeviceClass, NULL, MKDEV(Major, 0), NULL, DEVICE_NAME_IN_DEV_DIR);
 	if (IS_ERR(outputDeviceDevice)) {
-		destroyBuffer(buffer);
-		buffer = NULL;
 		printk(KERN_ERR "failed to create device '%s_%s'\n", CLASS_NAME, DEVICE_NAME); // TODO: add print error function etc..
 		return PTR_ERR(outputDeviceDevice);
 	}
@@ -119,8 +111,6 @@ void outputDevice_exit(void) {
 	class_destroy(outputDeviceClass);
 	
 	unregister_chrdev(Major, DEVICE_NAME);
-	destroyBuffer(buffer);
-	buffer = NULL;
 }  
 
 

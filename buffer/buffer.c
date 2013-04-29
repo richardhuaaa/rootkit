@@ -1,4 +1,3 @@
-#include <malloc.h>
 #include "buffer.h"
 
 //TODO: use gcc atomic buildins  (hopefully these will work in the kernel)
@@ -6,61 +5,30 @@
 /* TODO: use sync primatives etc
  race conditions are allowed to cause the loss of data in this buffer provided the stability of the kernel is not affected.
  
+ The reader should avoid reading the most recently written value by the write as there is no guarantee it has been written completely at he time of attempting a read.
  
- The reader should never read the most recently written value by the write as there is no guarantee it has been written completely at he time of attempting a read.
- 
- 
- TODO: remove use of assert - change to returning an error!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  TODO: deal with race condition between reader / writer on present write
  */
 
-struct buffer { //TODO: rename
-	int totalLengthThatShouldNotBeChangedAndIsNotZero;
-	volatile int readPosition;
-	volatile int writePosition;
-	bufferEntry *data;
-};
-
-static int getValueIncrementedWrappingToSizeOfBuffer(Buffer buffer, int value);
 
 
-Buffer createBuffer(int size) {
-	assert(size > 1);
+static int getValueIncrementedWrappingToSizeOfBuffer(int value);
+
+
+struct buffer createBuffer(void) {
+	struct buffer buffer; 
+	//TODO: clear all elements of buffer initially (e.g. data)
 	
-	Buffer buffer = malloc(sizeof(struct buffer));
-	if (buffer == NULL) {	
-		return NULL;
-	}
-	
-	buffer->data = calloc(size, sizeof(bufferEntry));
-	if (buffer->data == NULL) {
-		free(buffer);
-		return NULL;
-	}
-	
-	
-	buffer->totalLengthThatShouldNotBeChangedAndIsNotZero = size;
-	
-	buffer->readPosition = 0;
-	buffer->writePosition = 0;
+	buffer.readPosition = 0;
+	buffer.writePosition = 0;
 	
 	return buffer;
 }
 
-void destroyBuffer(Buffer buffer) {
-	if (buffer != NULL) {
-		free(buffer->data);
-		buffer->data = NULL;
-		free(buffer);
-	}
-}
-
-
-
 void addToBuffer(Buffer buffer, bufferEntry valueToAdd) {
 	//TODO: add a space e.g. to prevent write position becoming read position which gives the appearance of the buffer then being empty rather than full.
 	int expectedOldWritePosition = buffer->writePosition;
-	int nextWritePosition = getValueIncrementedWrappingToSizeOfBuffer(buffer, expectedOldWritePosition);
+	int nextWritePosition = getValueIncrementedWrappingToSizeOfBuffer(expectedOldWritePosition);
 	
 	int isFullNow = (nextWritePosition == buffer->readPosition);
 	
@@ -87,7 +55,7 @@ bufferEntry getAndRemoveFromBuffer(Buffer buffer) {
 	if (isBufferEmpty) {
 		result = VALUE_ON_READ_FAILING;
 	} else {
-		int nextReadPosition = getValueIncrementedWrappingToSizeOfBuffer(buffer, expectedOldReadPosition);
+		int nextReadPosition = getValueIncrementedWrappingToSizeOfBuffer(expectedOldReadPosition);
 		//TODO: prevent reading the most recent value from the writer. e.g. as it may not have been written yet
 		
 		int correctlyRemovedAnElement = __sync_bool_compare_and_swap (&(buffer->readPosition), expectedOldReadPosition, nextReadPosition);
@@ -102,8 +70,7 @@ bufferEntry getAndRemoveFromBuffer(Buffer buffer) {
 	return result;
 }
 
-// Preconditions buffer->totalLengthThatShouldNotBeChangedAndIsNotZero > 0
-static int getValueIncrementedWrappingToSizeOfBuffer(Buffer buffer, int value) {
-	return (value + 1) % buffer->totalLengthThatShouldNotBeChangedAndIsNotZero;
+// Preconditions OUTPUT_BUFFER_SIZE > 0
+static int getValueIncrementedWrappingToSizeOfBuffer(int value) {
+	return (value + 1) % OUTPUT_BUFFER_SIZE;
 }
-
