@@ -14,8 +14,8 @@
 #include "outputDevice.h"
 
 void **syscallTable;
-void (*pages_rw)(struct page *page, int numpages) = (void *) 0xc103ac70;
-void (*pages_ro)(struct page *page, int numpages) = (void *) 0xc103ac50;
+void (*pages_rw)(struct page *page, int numpages) = (void *) PAGES_RW;
+void (*pages_ro)(struct page *page, int numpages) = (void *) PAGES_RO;
 
 struct page *syscallPageTemp;
 
