@@ -29,8 +29,6 @@ static ssize_t device_write(struct file *, const char *, size_t, loff_t *);
 #define CLASS_NAME "outputDeviceClass"
 #define DEVICE_NAME_IN_DEV_DIR DEVICE_NAME
 
-static char msg[] = "hello world!\n";
-static char *msg_Ptr;
 
 struct class *outputDeviceClass;
 struct device *outputDeviceDevice; // TODO: rename these..
@@ -48,8 +46,8 @@ static struct file_operations fops = {
 	.release = device_release
 };
 
-static struct buffer buffer_;
-static Buffer buffer = &buffer_;
+static struct buffer bufferOfDataWaitingToBeSentToUser_;
+static Buffer bufferOfDataWaitingToBeSentToUser = &bufferOfDataWaitingToBeSentToUser_;
 
 // Functions
 /* 
@@ -58,7 +56,7 @@ The device will be registered e.g. a slot in the file table will be there. The o
 Though won't work well..
 */
 int outputDevice_init(void) {	
-	buffer_ = createBuffer();
+	bufferOfDataWaitingToBeSentToUser_ = createBuffer();
 
 	// Register the character device and get the major descriptor number
 	Major = register_chrdev(0, DEVICE_NAME, &fops);
@@ -88,13 +86,15 @@ int outputDevice_init(void) {
 	printk(KERN_INFO "created a device: %s\n", DEVICE_NAME_IN_DEV_DIR);
 	//printk("<1>Try various minor numbers.  Try to cat and echo to\n"); // minor numbers are only used for 
 	//printk("the device file.\n");
+	
+	addToOutputDevice("Log\n");
 
 	return 0;
 }
 
 
 static void addCharacterToOutputDevice(char ch) {
-	addToBuffer(buffer, ch);
+	addToBuffer(bufferOfDataWaitingToBeSentToUser, ch);
 }
 
 void addToOutputDevice(char *str) {
@@ -123,8 +123,8 @@ static int device_open(struct inode *inode, struct file *file) {
 	isDeviceAlreadyOpenSoFurtherOpensShouldFail++;
 		
 	try_module_get(THIS_MODULE);
-	
-	msg_Ptr = msg;
+
+	// perhaps reset read position in buffer
 	
 	return SUCCESS;
 }
@@ -150,20 +150,22 @@ static ssize_t device_read(struct file *filp,
 {
 	// Number of bytes actually written to the buffer
 	int bytes_read = 0;
-
-	/* If we're at the end of the message, return 0 signifying end of file */
-	if (*msg_Ptr == 0) return 0;
+	
+	char ch = getAndRemoveFromBuffer(bufferOfDataWaitingToBeSentToUser);
 
 	/* Actually put the data into the buffer */
-	while (length && *msg_Ptr)  {
+	while (length != 0  && ch != '\0')  {
 		/* The buffer is in the user data segment, not the kernel segment;
 		* assignment won't work.  We have to use put_user which copies data from
 		* the kernel data segment to the user data segment. */
 		
-		put_user(*(msg_Ptr++), buffer++);
-
+		put_user(ch, buffer);
+		
+		buffer++;
 		length--;
 		bytes_read++;
+		
+		ch = getAndRemoveFromBuffer(bufferOfDataWaitingToBeSentToUser);
 	}
 
 	/* Most read functions return the number of bytes put into the buffer */

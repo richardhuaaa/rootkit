@@ -25,6 +25,7 @@ struct buffer createBuffer(void) {
 	return buffer;
 }
 
+//TODO: prevent adding '\0' to buffer / data on failure..
 void addToBuffer(Buffer buffer, bufferEntry valueToAdd) {
 	//TODO: add a space e.g. to prevent write position becoming read position which gives the appearance of the buffer then being empty rather than full.
 	int expectedOldWritePosition = buffer->writePosition;
