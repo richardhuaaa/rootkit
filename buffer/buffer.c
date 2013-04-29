@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
+#include <malloc.h>
 #include "buffer.h"
 
 //TODO: use gcc atomic buildins  (hopefully these will work in the kernel)

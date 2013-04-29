@@ -10,9 +10,12 @@
 
 moduleName = blank
 obj-m += $(moduleName).o
-blank-objs += main.o fileHide.o moduleHide.o outputDevice.o logInput.o 
+blank-objs += main.o fileHide.o moduleHide.o outputDevice.o logInput.o buffer/buffer.o
+#TODO: fix location buffer is build - Ensure "buffer/makefile"  does not generate a conflicting ".o" file
 
 PWD = $(shell pwd)
+
+#todo: automatically run buffer test
 
 all: environmentSpecificOptions.h
 	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(PWD) modules
