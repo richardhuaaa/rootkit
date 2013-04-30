@@ -7,5 +7,4 @@
 #define DEVICE_NAME "rootkitLog" 
 
 void *hookSyscall(unsigned int syscallNumber, void *hook);
-void unhookSyscall(unsigned int syscallNumber, void *original);
 

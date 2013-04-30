@@ -16,28 +16,21 @@ void (*pages_ro)(struct page *page, int numpages) = (void *) PAGES_RO;
 
 void *hookSyscall(unsigned int syscallNumber, void *hook) {
    struct page *syscallPageTemp;
-   void *original;
-
+   void *previous;   // The previous syscall installed in the table
+   
+   // cr0 is a control register in the x86 family of processors.
+   // Bit 16 of that register is WP - Write protect: Determines whether
+   // the CPU can write to pages marked read-only
 	write_cr0 (read_cr0 () & (~ 0x10000));
 	syscallPageTemp = virt_to_page(syscallTable);
 	pages_rw(syscallPageTemp, 1);
 
-	original = syscallTable[syscallNumber];
+	previous = syscallTable[syscallNumber];
 	syscallTable[syscallNumber] = hook;
 
-	write_cr0 (read_cr0 () | 0x10000);
-
-   return original;
-}
-
-void unhookSyscall(unsigned int syscallNumber, void *original) {
-   struct page *syscallPageTemp;
-	write_cr0 (read_cr0 () & (~ 0x10000));
-	syscallPageTemp = virt_to_page(syscallTable);
-	syscallTable[syscallNumber] = original;
 	pages_ro(syscallPageTemp, 1);
 	write_cr0 (read_cr0 () | 0x10000);
-	printk(KERN_ALERT "MODULE EXIT\n");
-}
 
+   return previous;
+}
 
