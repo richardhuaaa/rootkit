@@ -12,7 +12,7 @@
 #include <linux/device.h>
 #include <asm/uaccess.h>  /* for put_user */
 
-#include "constants.h"
+#include "common.h"
 #include "outputDevice.h"
 #include "buffer/buffer.h"
 

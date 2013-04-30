@@ -2,7 +2,7 @@
 #include <linux/kernel.h>   // For KERN_INFO
 #include <linux/init.h>     // For init macros
 
-#include "constants.h"
+#include "common.h"
 #include "fileHide.h"
 
 int fileHide_start(void) {

