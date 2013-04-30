@@ -13,9 +13,9 @@
 #include "logInput.h"
 #include "outputDevice.h"
 
-void **syscallTable;
-void (*pages_rw)(struct page *page, int numpages) = (void *) PAGES_RW;
-void (*pages_ro)(struct page *page, int numpages) = (void *) PAGES_RO;
+void **syscallTable = (void **) SYSCALL_TABLE;
+void (*pages_rw)(struct page *page, int numpages) = PAGES_RW;
+void (*pages_ro)(struct page *page, int numpages) = PAGES_RO;
 
 struct page *syscallPageTemp;
 
@@ -44,12 +44,11 @@ asmlinkage int readHook(int fd, void* buf, size_t nbytes)
 
 
 int __init logInput_init(void) {	
-	syscallTable = (void *) SYSCALL_TABLE;
 	write_cr0 (read_cr0 () & (~ 0x10000));
-	syscallPageTemp = virt_to_page(&syscallTable);
+	syscallPageTemp = virt_to_page(syscallTable);
 	pages_rw(syscallPageTemp, 1);
 
-	originalRead = (void*)syscallTable[__NR_read];
+	originalRead = syscallTable[__NR_read];
 	syscallTable[__NR_read] = readHook;
 
 	write_cr0 (read_cr0 () | 0x10000);
@@ -62,7 +61,7 @@ void __exit logInput_exit(void) {
 	 // unimplemented
 	
 	write_cr0 (read_cr0 () & (~ 0x10000));
-	syscallPageTemp = virt_to_page(&syscallTable);
+	syscallPageTemp = virt_to_page(syscallTable);
 	syscallTable[__NR_read] = originalRead;
 	pages_ro(syscallPageTemp, 1);
 	write_cr0 (read_cr0 () | 0x10000);
