@@ -8,6 +8,8 @@
  The reader should avoid reading the most recently written value by the write as there is no guarantee it has been written completely at he time of attempting a read.
  
  TODO: deal with race condition between reader / writer on present write
+ 
+ //TODO: increase buffer size / use tty..
  */
 
 
@@ -61,14 +63,20 @@ bufferEntry getAndRemoveFromBuffer(Buffer buffer) {
 		result = VALUE_ON_READ_FAILING;
 	} else {
 		int nextReadPosition = getValueIncrementedWrappingToSizeOfBuffer(expectedOldReadPosition);
-		//TODO: prevent reading the most recent value from the writer. e.g. as it may not have been written yet
+		int wouldBufferBeEmptyAfterThisRead = (nextReadPosition == buffer->writePosition);
 		
-		int correctlyRemovedAnElement = __sync_bool_compare_and_swap (&(buffer->readPosition), expectedOldReadPosition, nextReadPosition);
-		
-		if (correctlyRemovedAnElement) {
-			result = buffer->data[expectedOldReadPosition];
+		if (!wouldBufferBeEmptyAfterThisRead) {			
+			//TODO: prevent reading the most recent value from the writer. e.g. as it may not have been written yet
+			
+			int correctlyRemovedAnElement = __sync_bool_compare_and_swap (&(buffer->readPosition), expectedOldReadPosition, nextReadPosition);
+			
+			if (correctlyRemovedAnElement) {
+				result = buffer->data[expectedOldReadPosition];
+			} else {
+				result = VALUE_ON_READ_FAILING;	
+			}
 		} else {
-			result = VALUE_ON_READ_FAILING;	
+			result = VALUE_ON_READ_FAILING;
 		}
 	}
 	
