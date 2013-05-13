@@ -3,6 +3,7 @@
 
 // based on http://www.faqs.org/docs/kernel/x571.html /  http://www.tldp.org/LDP/lkmpg/2.6/html/x569.html
 
+//TODO: increase buffer size / use tty..
 
 #include <linux/module.h>   // For modules
 #include <linux/kernel.h>   // For KERN_INFO
