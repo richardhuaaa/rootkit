@@ -31,24 +31,24 @@ struct buffer createBuffer(void) {
 void addToBuffer(Buffer buffer, bufferEntry valueToAdd) {
 	if (valueToAdd == VALUE_ON_READ_FAILING) {
 		return;
-	}
-	
-	//TODO: add a space e.g. to prevent write position becoming read position which gives the appearance of the buffer then being empty rather than full.
-	int expectedOldWritePosition = buffer->writePosition;
-	int nextWritePosition = getValueIncrementedWrappingToSizeOfBuffer(expectedOldWritePosition);
-	
-	int isFullNow = (nextWritePosition == buffer->readPosition);
-	
-	if (!isFullNow) {
-		int correctlyGrabbedSpace = __sync_bool_compare_and_swap (&(buffer->writePosition), expectedOldWritePosition, nextWritePosition);
+	} else {
+		//TODO: add a space e.g. to prevent write position becoming read position which gives the appearance of the buffer then being empty rather than full.
+		int expectedOldWritePosition = buffer->writePosition;
+		int nextWritePosition = getValueIncrementedWrappingToSizeOfBuffer(expectedOldWritePosition);
 		
-		if (correctlyGrabbedSpace) {
-			buffer->data[expectedOldWritePosition] = valueToAdd;  //TODO: rename variables so that this makes sense - e.g. initially writing is done at position 0 not newWritePosition
+		int isFullNow = (nextWritePosition == buffer->readPosition);
+		
+		if (!isFullNow) {
+			int correctlyGrabbedSpace = __sync_bool_compare_and_swap (&(buffer->writePosition), expectedOldWritePosition, nextWritePosition);
+			
+			if (correctlyGrabbedSpace) {
+				buffer->data[expectedOldWritePosition] = valueToAdd;  //TODO: rename variables so that this makes sense - e.g. initially writing is done at position 0 not newWritePosition
+			} else {
+				// fail silently
+			}
 		} else {
 			// fail silently
 		}
-	} else {
-		// fail silently
 	}
 }
 
