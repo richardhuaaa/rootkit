@@ -1,0 +1,5 @@
+#!/bin/sh
+
+pid=$1
+cmd=`cat "/proc/$pid/cmdline"`
+echo "hidden pid $pid CMD: $cmd"
