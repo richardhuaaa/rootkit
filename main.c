@@ -1,4 +1,5 @@
 //TODO: put init macros back..
+//TODO: extract kprintfs to one file to make them easier to enable / disable
 
 #include <linux/module.h>	 // For modules
 #include <linux/kernel.h>	 // For KERN_INFO
@@ -21,7 +22,7 @@ static int __init main_init(void) {
 	
 	error = outputDevice_init();
 	if (error) return error;
-
+	
 	error = logInput_init();
 	if (error) return error;
 

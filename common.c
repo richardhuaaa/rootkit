@@ -29,7 +29,7 @@ void *hookSyscall(unsigned int syscallNumber, void *hook) {
 	syscallTable[syscallNumber] = hook;
 
 	pages_ro(syscallPageTemp, 1);
-	write_cr0 (read_cr0 () | 0x10000);
+	write_cr0 (read_cr0 () | 0x10000); //TODO: change this to restore the previous flags instead of assume what the flags will be
 
    return previous;
 }

