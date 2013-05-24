@@ -40,7 +40,7 @@ struct notifier_block notificationOnProcessExit = {
 //TODO: move this higher in the file
 int processHider_init(void) {
 	//TODO: only hide proccess when wanted ...
-	hideProcess(12549); // todo: perhaps use result of function call..
+	//hideProcess(16441); // todo: perhaps use result of function call..
 	//TODO: check if hid is already hidden - trying to hide it multiple times causes issues
 
 	//replacement_do_exit(0);
