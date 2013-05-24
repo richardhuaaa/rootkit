@@ -49,8 +49,8 @@ static void __exit main_exit(void) {
 	fileHide_stop();
 #ifndef DEV_MODE
 	moduleHide_stop();
-#endif
 	logInput_exit();
+#endif
 	outputDevice_exit();
 	processHider_exit();
 

