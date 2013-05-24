@@ -12,6 +12,6 @@ void *hookSyscall(unsigned int syscallNumber, void *hook);
 
 void getHijackBytes(void *hijackDestination, /* out */ char *bytes);
 
-void writeHijackBytes(void *address, char *replacementBytes);
+// void writeHijackBytes(void *address, char *replacementBytes);
 
 void writeHijackBytes(void *address, char *replacementBytes, /* out */ char *previousBytes);

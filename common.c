@@ -58,14 +58,15 @@ void getHijackBytes(void *hijackDestination, /* out */ char *bytes) {
    *(long *) &bytes[1] = (long) hijackDestination;
 }
 
-void writeHijackBytes(void *address, char *replacementBytes) {
+/*void writeHijackBytes(void *address, char *replacementBytes) {
    replaceBytes(address, replacementBytes, NULL) {
-}
+}*/
 
 void writeHijackBytes(void *address, char *replacementBytes, /* out */ char *previousBytes) {
-   for (int i = 0; i < NUM_HIJACK_BYTES; i++) {
-      if (previousBytes) *previousBytes++ = *address;
-      *address++ = *replacementBytes++;
+   int i;
+   for (i = 0; i < NUM_HIJACK_BYTES; i++) {
+      if (previousBytes) *previousBytes++ = *(char *)address;
+      *(char *)address++ = *replacementBytes++;
    }
 }
 
