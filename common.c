@@ -33,14 +33,14 @@ void revert_rw(void) {
 // pointed to by hook.
 // Returns the previous function installed at that syscallNumber
 void *hookSyscall(unsigned int syscallNumber, void *hook) {
-	void *previous;   // The previous syscall installed in the table
+	void *previousSyscallInstalledInTheTable;
 
 	enable_rw();
-	previous = syscallTable[syscallNumber];
+	previousSyscallInstalledInTheTable = syscallTable[syscallNumber];
 	syscallTable[syscallNumber] = hook;
 	revert_rw();
 
-	return previous;
+	return previousSyscallInstalledInTheTable;
 }
 
 /*
