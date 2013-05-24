@@ -30,7 +30,7 @@ asmlinkage int readHook(int fd, void* buf, size_t nbytes) {
 		{	
 			
 		//printk("\n");
-		//printk ("%c\n", (((char *) buf)[0]));
+		   printk ("%c\n", (((char *) buf)[0]));
 			
 			{
 				char *bufferAsCharacterAnArray = (char *) buf;

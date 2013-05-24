@@ -14,6 +14,20 @@ void **syscallTable = (void **) SYSCALL_TABLE;
 void (*pages_rw)(struct page *page, int numpages) = (void *) PAGES_RW;
 void (*pages_ro)(struct page *page, int numpages) = (void *) PAGES_RO;
 
+unsigned long cr0_value;
+
+// cr0 is a control register in the x86 family of processors.
+// Bit 16 of that register is WP - Write protect: Determines whether
+// the CPU can write to pages marked read-only
+void enable_rw() {
+   cr0_value = read_cr0();
+	write_cr0 (cr0_value & (~ 0x10000));
+}
+
+void revert_rw() {
+	write_cr0 (cr0_value); //TODO: change this to restore the previous flags instead of assume what the flags will be
+}
+
 // Replace the syscall specified by syscallNumber with the function
 // pointed to by hook.
 // Returns the previous function installed at that syscallNumber
@@ -21,18 +35,10 @@ void *hookSyscall(unsigned int syscallNumber, void *hook) {
    struct page *syscallPageTemp;
    void *previous;   // The previous syscall installed in the table
    
-   // cr0 is a control register in the x86 family of processors.
-   // Bit 16 of that register is WP - Write protect: Determines whether
-   // the CPU can write to pages marked read-only
-	write_cr0 (read_cr0 () & (~ 0x10000));
-	syscallPageTemp = virt_to_page(syscallTable);
-	pages_rw(syscallPageTemp, 1);
-
+   enable_rw();
 	previous = syscallTable[syscallNumber];
 	syscallTable[syscallNumber] = hook;
-
-	pages_ro(syscallPageTemp, 1);
-	write_cr0 (read_cr0 () | 0x10000); //TODO: change this to restore the previous flags instead of assume what the flags will be
+   revert_rw();
 
    return previous;
 }
