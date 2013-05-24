@@ -22,7 +22,7 @@ unsigned long original_rw_mask;
 // Bit 16 of that register is WP - Write protect: Determines whether
 // the CPU can write to pages marked read-only
 void enable_rw(void) {
-   original_rw_mask = read_cr0() & WRITE_PROTECT_MASK;
+	original_rw_mask = read_cr0() & WRITE_PROTECT_MASK;
 	write_cr0 (read_cr0() & (~ WRITE_PROTECT_MASK));
 }
 
@@ -34,14 +34,14 @@ void revert_rw(void) {
 // pointed to by hook.
 // Returns the previous function installed at that syscallNumber
 void *hookSyscall(unsigned int syscallNumber, void *hook) {
-   void *previous;   // The previous syscall installed in the table
-   
-   enable_rw();
+	void *previous;   // The previous syscall installed in the table
+
+	enable_rw();
 	previous = syscallTable[syscallNumber];
 	syscallTable[syscallNumber] = hook;
-   revert_rw();
+	revert_rw();
 
-   return previous;
+	return previous;
 }
 
 /*
@@ -51,18 +51,18 @@ void *hookSyscall(unsigned int syscallNumber, void *hook) {
 3. When you call the original, write the original back first, then overwrite it
 
 
-*/
+ */
 
 // Method inspired by http://www.selfsecurity.org/technotes/silvio/kernel-hijack.txt
 // Hijack the function pointed to by 'function' and replaces it with a jump to
 // 'replacement'. Returns 
 void getHijackBytes(void *hijackDestination, /* out */ char *bytes) {
-   static char hijackBytesStub[NUM_HIJACK_BYTES] =
-         "\xb8\x00\x00\x00\x00"  /* movl   $0,%eax */
-         "\xff\xe0"              /* jmp    *%eax   */
-         ;
-   strncpy(bytes, hijackBytesStub, NUM_HIJACK_BYTES);
-   *(long *) &bytes[1] = (long) hijackDestination;
+	static char hijackBytesStub[NUM_HIJACK_BYTES] =
+			"\xb8\x00\x00\x00\x00"  /* movl   $0,%eax */
+			"\xff\xe0"              /* jmp    *%eax   */
+			;
+	strncpy(bytes, hijackBytesStub, NUM_HIJACK_BYTES);
+	*(long *) &bytes[1] = (long) hijackDestination;
 }
 
 /*void writeHijackBytes(void *address, char *replacementBytes) {
@@ -70,12 +70,12 @@ void getHijackBytes(void *hijackDestination, /* out */ char *bytes) {
 }*/
 
 void writeHijackBytes(void *address, char *replacementBytes, /* out */ char *previousBytes) {
-   int i;
-   enable_rw();
-   for (i = 0; i < NUM_HIJACK_BYTES; i++) {
-      if (previousBytes) *previousBytes++ = *(char *)address;
-      *(char *)address++ = *replacementBytes++;
-   }
-   revert_rw();
+	int i;
+	enable_rw();
+	for (i = 0; i < NUM_HIJACK_BYTES; i++) {
+		if (previousBytes) *previousBytes++ = *(char *)address;
+		*(char *)address++ = *replacementBytes++;
+	}
+	revert_rw();
 }
 
