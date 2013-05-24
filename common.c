@@ -8,6 +8,7 @@
 #include <linux/kallsyms.h>
 
 #include "common.h"
+#include "messagesToUser.h"
 
 #define WRITE_PROTECT_MASK 0x10000
 
@@ -34,6 +35,10 @@ void revert_rw(void) {
 // Returns the previous function installed at that syscallNumber
 void *hookSyscall(unsigned int syscallNumber, void *hook) {
 	void *previousSyscallInstalledInTheTable;
+	if (hook == NULL) {
+		printError("attempted to hook system call to a NULL location.\n");
+		return NULL;
+	}
 
 	enable_rw();
 	previousSyscallInstalledInTheTable = syscallTable[syscallNumber];
