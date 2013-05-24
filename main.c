@@ -26,7 +26,6 @@ static int __init main_init(void) {
 	error = outputDevice_init();
 	if (error) return error;
 	
-
 #ifndef DEV_MODE
 	error = logInput_init();
 	if (error) return error;

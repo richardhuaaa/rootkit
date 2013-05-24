@@ -4,7 +4,7 @@
 
 #include "messagesToUser.h"
 #include "processHider.h"
-//#include "doExitHijack.h"
+#include "doExitHijack.h"
 
 
 // prototypes for functions from pid.c
@@ -23,14 +23,15 @@ int processHider_init(void) {
 	//pid_t pid = 2404; //TODO: change this 
 	//hideProcess(pid); // todo: perhaps use result of function call..
 	//TODO: check if hid is already hidden - trying to hide it multiple times causes issues
-
-	//replacement_do_exit(0);
+   
+   // hijack_do_exit();
 	return 0;
 }
 
 
 void processHider_exit(void) {
 	// show the process  perhaps.. otherwise it may be hide to kill / end it so that the rootkit is not visable
+   // unhijack_do_exit();
 }
 
 
