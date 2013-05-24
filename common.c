@@ -14,6 +14,9 @@ void **syscallTable = (void **) SYSCALL_TABLE;
 void (*pages_rw)(struct page *page, int numpages) = (void *) PAGES_RW;
 void (*pages_ro)(struct page *page, int numpages) = (void *) PAGES_RO;
 
+// Replace the syscall specified by syscallNumber with the function
+// pointed to by hook.
+// Returns the previous function installed at that syscallNumber
 void *hookSyscall(unsigned int syscallNumber, void *hook) {
    struct page *syscallPageTemp;
    void *previous;   // The previous syscall installed in the table
@@ -32,5 +35,37 @@ void *hookSyscall(unsigned int syscallNumber, void *hook) {
 	write_cr0 (read_cr0 () | 0x10000); //TODO: change this to restore the previous flags instead of assume what the flags will be
 
    return previous;
+}
+
+/*
+0. Write your replacement function
+1. Figure out what to write and where the function is
+2. Write it to the function, and remember the original bytes
+3. When you call the original, write the original back first, then overwrite it
+
+
+*/
+
+// Method inspired by http://www.selfsecurity.org/technotes/silvio/kernel-hijack.txt
+// Hijack the function pointed to by 'function' and replaces it with a jump to
+// 'replacement'. Returns 
+void getHijackBytes(void *hijackDestination, /* out */ char *bytes) {
+   static char hijackBytesStub[NUM_HIJACK_BYTES] =
+         "\xb8\x00\x00\x00\x00"  /* movl   $0,%eax */
+         "\xff\xe0"              /* jmp    *%eax   */
+         ;
+   strncpy(bytes, hijackBytesStub, NUM_HIJACK_BYTES);
+   *(long *) &bytes[1] = (long) hijackDestination;
+}
+
+void writeHijackBytes(void *address, char *replacementBytes) {
+   replaceBytes(address, replacementBytes, NULL) {
+}
+
+void writeHijackBytes(void *address, char *replacementBytes, /* out */ char *previousBytes) {
+   for (int i = 0; i < NUM_HIJACK_BYTES; i++) {
+      if (previousBytes) *previousBytes++ = *address;
+      *address++ = *replacementBytes++;
+   }
 }
 
