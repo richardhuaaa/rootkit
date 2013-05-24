@@ -6,12 +6,13 @@
 //TODO: increase buffer size / use tty..
 
 #include <linux/module.h>   // For modules
-#include <linux/kernel.h>   // For KERN_INFO
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/err.h>
 #include <linux/device.h>
-#include <asm/uaccess.h>  /* for put_user */
+#include <asm/uaccess.h>  //for put_user
+
+#include "messagesToUser.h"
 
 #include "common.h"
 #include "outputDevice.h"
@@ -63,7 +64,7 @@ int outputDevice_init(void) {
 	Major = register_chrdev(0, DEVICE_NAME, &fops);
 
 	if (Major < 0) {
-		printk (KERN_INFO "Registering the character device failed with %d\n", Major);
+		printInfo("Registering the character device failed with %d\n", Major);
 		return Major;
 	}
 	
@@ -75,18 +76,18 @@ int outputDevice_init(void) {
 	
 	outputDeviceDevice = device_create(outputDeviceClass, NULL, MKDEV(Major, 0), NULL, DEVICE_NAME_IN_DEV_DIR);
 	if (IS_ERR(outputDeviceDevice)) {
-		printk(KERN_ERR "failed to create device '%s_%s'\n", CLASS_NAME, DEVICE_NAME); // TODO: add print error function etc..
+		printError("failed to create device '%s_%s'\n", CLASS_NAME, DEVICE_NAME); // TODO: add print error function etc..
 		return PTR_ERR(outputDeviceDevice);
 	}
 
 	/*
-	printk("<1>I was assigned major number %d.  To talk to\n", Major);
-	printk("<1>the driver, create a dev file with\n");
-	printk("'mknod /dev/hello c %d 0'.\n", Major);
+	printInfo("<1>I was assigned major number %d.  To talk to\n", Major);
+	printInfo("<1>the driver, create a dev file with\n");
+	printInfo("'mknod /dev/hello c %d 0'.\n", Major);
 	*/
-	printk(KERN_INFO "created a device: %s\n", DEVICE_NAME_IN_DEV_DIR);
-	//printk("<1>Try various minor numbers.  Try to cat and echo to\n"); // minor numbers are only used for 
-	//printk("the device file.\n");
+	printInfo("created a device: %s\n", DEVICE_NAME_IN_DEV_DIR);
+	//printInfo("<1>Try various minor numbers.  Try to cat and echo to\n"); // minor numbers are only used for
+	//printInfo("the device file.\n");
 	
 	addStringToOutputDevice("Log\n");
 
@@ -176,6 +177,6 @@ static ssize_t device_read(struct file *filp,
 
 /*  Called when a process writes to dev file: echo "hi" > /dev/hello */
 static ssize_t device_write(struct file *filp, const char *buff, size_t len, loff_t *off) {
-	printk ("<1>Sorry, this operation isn't supported.\n");
+	printInfo("<1>Sorry, this operation isn't supported.\n");
 	return -EINVAL;
 }

