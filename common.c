@@ -4,11 +4,11 @@
 #include <linux/errno.h>
 #include <linux/types.h>
 #include <linux/unistd.h>
-#include <asm/cacheflush.h>
 #include <linux/sched.h>
 #include <linux/kallsyms.h>
 
 #include "common.h"
+#include "messagesToUser.h"
 
 #define WRITE_PROTECT_MASK 0x10000
 
@@ -43,12 +43,16 @@ void revert_rw(struct page *page) {
 void *hookSyscall(unsigned int syscallNumber, void *hook) {
    void *previous;   // The previous syscall installed in the table
    
+   if (hook == NULL) {
+		printError("attempted to hook system call to a NULL location.\n");
+		return NULL;
+	}
    struct page *page = enable_rw(syscallTable);
 	previous = syscallTable[syscallNumber];
 	syscallTable[syscallNumber] = hook;
    revert_rw(page);
 
-   return previous;
+	return previousSyscallInstalledInTheTable;
 }
 
 /*
@@ -58,18 +62,18 @@ void *hookSyscall(unsigned int syscallNumber, void *hook) {
 3. When you call the original, write the original back first, then overwrite it
 
 
-*/
+ */
 
 // Method inspired by http://www.selfsecurity.org/technotes/silvio/kernel-hijack.txt
 // Hijack the function pointed to by 'function' and replaces it with a jump to
 // 'replacement'. Returns 
 void getHijackBytes(void *hijackDestination, /* out */ char *bytes) {
-   static char hijackBytesStub[NUM_HIJACK_BYTES] =
-         "\xb8\x00\x00\x00\x00"  /* movl   $0,%eax */
-         "\xff\xe0"              /* jmp    *%eax   */
-         ;
-   strncpy(bytes, hijackBytesStub, NUM_HIJACK_BYTES);
-   *(long *) &bytes[1] = (long) hijackDestination;
+	static char hijackBytesStub[NUM_HIJACK_BYTES] =
+			"\xb8\x00\x00\x00\x00"  /* movl   $0,%eax */
+			"\xff\xe0"              /* jmp    *%eax   */
+			;
+	strncpy(bytes, hijackBytesStub, NUM_HIJACK_BYTES);
+	*(long *) &bytes[1] = (long) hijackDestination;
 }
 
 /*void writeHijackBytes(void *address, char *replacementBytes) {

@@ -6,6 +6,8 @@
 # If it complains about the module not existing when you run install, don't worry - it's just
 # trying to uninstall any previously running instances for you, and will install it for you anyway
 
+#TOOD: fix dependancy tracking
+
 .PHONY: environmentSpecificOptions.h
 
 moduleName = blank
