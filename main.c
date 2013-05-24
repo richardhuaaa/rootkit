@@ -12,6 +12,7 @@
 #include "outputDevice.h"
 #include "processHider.h"
 
+//TODO: rename this to if wanting to be able to remove rootkit
 #define DEV_MODE
 
 
