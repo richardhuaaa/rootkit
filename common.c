@@ -4,7 +4,6 @@
 #include <linux/errno.h>
 #include <linux/types.h>
 #include <linux/unistd.h>
-#include <asm/cacheflush.h>
 #include <linux/sched.h>
 #include <linux/kallsyms.h>
 
