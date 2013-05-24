@@ -21,12 +21,19 @@ unsigned long original_rw_mask;
 // cr0 is a control register in the x86 family of processors.
 // Bit 16 of that register is WP - Write protect: Determines whether
 // the CPU can write to pages marked read-only
-void enable_rw(void) {
-	original_rw_mask = read_cr0() & WRITE_PROTECT_MASK;
+struct page *enable_rw(void *ptr) {
+   struct page *tempPage;
+
+   original_rw_mask = read_cr0() & WRITE_PROTECT_MASK;
 	write_cr0 (read_cr0() & (~ WRITE_PROTECT_MASK));
+   tempPage = virt_to_page(ptr);
+   pages_rw(tempPage, 1);
+
+   return tempPage;
 }
 
-void revert_rw(void) {
+void revert_rw(struct page *page) {
+   pages_ro(page, 1);
 	write_cr0 (read_cr0() | original_rw_mask); //TODO: change this to restore the previous flags instead of assume what the flags will be
 }
 
@@ -35,15 +42,16 @@ void revert_rw(void) {
 // Returns the previous function installed at that syscallNumber
 void *hookSyscall(unsigned int syscallNumber, void *hook) {
 	void *previousSyscallInstalledInTheTable;
+
 	if (hook == NULL) {
 		printError("attempted to hook system call to a NULL location.\n");
 		return NULL;
+	} else {
+		struct page *page = enable_rw(syscallTable);
+		previousSyscallInstalledInTheTable = syscallTable[syscallNumber];
+		syscallTable[syscallNumber] = hook;
+		revert_rw(page);
 	}
-
-	enable_rw();
-	previousSyscallInstalledInTheTable = syscallTable[syscallNumber];
-	syscallTable[syscallNumber] = hook;
-	revert_rw();
 
 	return previousSyscallInstalledInTheTable;
 }
@@ -73,13 +81,23 @@ void getHijackBytes(void *hijackDestination, /* out */ char *bytes) {
    replaceBytes(address, replacementBytes, NULL) {
 }*/
 
-void writeHijackBytes(void *address, char *replacementBytes, /* out */ char *previousBytes) {
-	int i;
-	enable_rw();
-	for (i = 0; i < NUM_HIJACK_BYTES; i++) {
-		if (previousBytes) *previousBytes++ = *(char *)address;
-		*(char *)address++ = *replacementBytes++;
-	}
-	revert_rw();
+void writeHijackBytes(void *original, char *replacementBytes, /* out */ char *previousBytes) {
+   int i;
+   char *address;
+   struct page *page;
+
+   address = (char *) original;
+
+   for (i = 0; i < NUM_HIJACK_BYTES; i++) {
+      if (previousBytes != NULL) {
+         *previousBytes = *address;
+         previousBytes++;
+      }
+      page = enable_rw(address);
+      *address = *replacementBytes;
+      revert_rw(page);
+      address++;
+      replacementBytes++;
+   }
 }
 
