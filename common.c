@@ -10,29 +10,30 @@
 
 #include "common.h"
 
+#define WRITE_PROTECT_MASK 0x10000
+
 void **syscallTable = (void **) SYSCALL_TABLE;
 void (*pages_rw)(struct page *page, int numpages) = (void *) PAGES_RW;
 void (*pages_ro)(struct page *page, int numpages) = (void *) PAGES_RO;
 
-unsigned long cr0_value;
+unsigned long original_rw_mask;
 
 // cr0 is a control register in the x86 family of processors.
 // Bit 16 of that register is WP - Write protect: Determines whether
 // the CPU can write to pages marked read-only
-void enable_rw() {
-   cr0_value = read_cr0();
-	write_cr0 (cr0_value & (~ 0x10000));
+void enable_rw(void) {
+   original_rw_mask = read_cr0() & WRITE_PROTECT_MASK;
+	write_cr0 (read_cr0() & (~ WRITE_PROTECT_MASK));
 }
 
-void revert_rw() {
-	write_cr0 (cr0_value); //TODO: change this to restore the previous flags instead of assume what the flags will be
+void revert_rw(void) {
+	write_cr0 (read_cr0() | original_rw_mask); //TODO: change this to restore the previous flags instead of assume what the flags will be
 }
 
 // Replace the syscall specified by syscallNumber with the function
 // pointed to by hook.
 // Returns the previous function installed at that syscallNumber
 void *hookSyscall(unsigned int syscallNumber, void *hook) {
-   struct page *syscallPageTemp;
    void *previous;   // The previous syscall installed in the table
    
    enable_rw();
@@ -70,9 +71,11 @@ void getHijackBytes(void *hijackDestination, /* out */ char *bytes) {
 
 void writeHijackBytes(void *address, char *replacementBytes, /* out */ char *previousBytes) {
    int i;
+   enable_rw();
    for (i = 0; i < NUM_HIJACK_BYTES; i++) {
       if (previousBytes) *previousBytes++ = *(char *)address;
       *(char *)address++ = *replacementBytes++;
    }
+   revert_rw();
 }
 
