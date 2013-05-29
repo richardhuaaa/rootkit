@@ -3,7 +3,6 @@
 #include <linux/rculist.h>
 
 #include "processHider.h"
-// #include "doExitHijack.h"
 #include "readdirHijack.h"
 
 

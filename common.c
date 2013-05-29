@@ -8,7 +8,6 @@
 #include <linux/kallsyms.h>
 
 #include "common.h"
-#include "messagesToUser.h"
 
 #define WRITE_PROTECT_MASK 0x10000
 
@@ -42,46 +41,46 @@ inline void restore_wp ( unsigned long cr0 )
 // cr0 is a control register in the x86 family of processors.
 // Bit 16 of that register is WP - Write protect: Determines whether
 // the CPU can write to pages marked read-only
-// struct page *enable_rw(void *ptr) {
-// //   struct page *tempPage;
-// //  
-// //   preempt_disable();
-// //   barrier();
-// //
-// //   original_rw_mask = read_cr0() & WRITE_PROTECT_MASK;
-// 	write_cr0 (read_cr0() & (~ WRITE_PROTECT_MASK));
-// //   tempPage = virt_to_page(ptr);
-// //   pages_rw(tempPage, 1);
-// 
-//    //return tempPage;
-//    return NULL;
-// }
-// 
-// void revert_rw(struct page *page) {
-//    //pages_ro(page, 1);
-// 	write_cr0 (read_cr0() | original_rw_mask); //TODO: change this to restore the previous flags instead of assume what the flags will be
-// 
-//     //barrier();
-//     //preempt_enable_no_resched();
-// }
+struct page *enable_rw(void *ptr) {
+   //struct page *tempPage;
+  
+   preempt_disable();
+   barrier();
+
+   original_rw_mask = read_cr0() & WRITE_PROTECT_MASK;
+	write_cr0 (read_cr0() & (~ WRITE_PROTECT_MASK));
+//   tempPage = virt_to_page(ptr);
+//   pages_rw(tempPage, 1);
+
+   //return tempPage;
+   return NULL;
+}
+
+void revert_rw(struct page *page) {
+   //pages_ro(page, 1);
+	write_cr0 (read_cr0() | original_rw_mask); //TODO: change this to restore the previous flags instead of assume what the flags will be
+
+   barrier();
+   preempt_enable_no_resched();
+}
 
 // Replace the syscall specified by syscallNumber with the function
 // pointed to by hook.
 // Returns the previous function installed at that syscallNumber
-//void *hookSyscall(unsigned int syscallNumber, void *hook) {
-//   void *previous;   // The previous syscall installed in the table
-//   
-//   if (hook == NULL) {
-//		printError("attempted to hook system call to a NULL location.\n");
-//		return NULL;
-//	}
-//   struct page *page = enable_rw(syscallTable);
-//	previous = syscallTable[syscallNumber];
-//	syscallTable[syscallNumber] = hook;
-//   revert_rw(page);
-//
-//	return previous;
-//}
+void *hookSyscall(unsigned int syscallNumber, void *hook) {
+   void *previous;   // The previous syscall installed in the table
+   
+   if (hook == NULL) {
+		printError("attempted to hook system call to a NULL location.\n");
+		return NULL;
+	}
+   struct page *page = enable_rw(syscallTable);
+	previous = syscallTable[syscallNumber];
+	syscallTable[syscallNumber] = hook;
+   revert_rw(page);
+
+	return previous;
+}
 
 /*
 0. Write your replacement function
@@ -105,10 +104,6 @@ void getHijackBytes(void *hijackDestination, /* out */ char *bytes) {
 	*(unsigned long *) &bytes[1] = (unsigned long) hijackDestination;
 }
 
-/*void writeHijackBytes(void *address, char *replacementBytes) {
-   replaceBytes(address, replacementBytes, NULL) {
-}*/
-
 void writeHijackBytes(void *original, char *replacementBytes, /* out */ char *previousBytes) {
    int i;
    char *address;
@@ -123,11 +118,11 @@ void writeHijackBytes(void *original, char *replacementBytes, /* out */ char *pr
          *previousBytes = *address;
          previousBytes++;
       }
-      //page = enable_rw(address);
-      unsigned long o_cr0 = disable_wp();
+      page = enable_rw(address);
+      //unsigned long o_cr0 = disable_wp();
       *address = *replacementBytes;
-      restore_wp(o_cr0);
-      //revert_rw(page);
+      //restore_wp(o_cr0);
+      revert_rw(page);
       address++;
       replacementBytes++;
    }

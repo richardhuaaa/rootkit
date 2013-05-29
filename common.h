@@ -1,4 +1,5 @@
 #include "environmentSpecificOptions.h"
+#include "messagesToUser.h"
 
 // Needed if you intend to be able to unload/reload the module without rebooting
 #define DEV_MODE
@@ -8,7 +9,7 @@
 
 #define NUM_HIJACK_BYTES   6
 
-//void *hookSyscall(unsigned int syscallNumber, void *hook);
+void *hookSyscall(unsigned int syscallNumber, void *hook);
 
 void getHijackBytes(void *hijackDestination, /* out */ char *bytes);
 

