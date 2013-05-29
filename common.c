@@ -18,42 +18,70 @@ void (*pages_ro)(struct page *page, int numpages) = (void *) PAGES_RO;
 
 unsigned long original_rw_mask;
 
+inline unsigned long disable_wp ( void )
+{
+    unsigned long cr0;
+
+    preempt_disable();
+    barrier();
+
+    cr0 = read_cr0();
+    write_cr0(cr0 & ~X86_CR0_WP);
+    return cr0;
+}
+
+inline void restore_wp ( unsigned long cr0 )
+{
+    write_cr0(cr0);
+
+    barrier();
+    preempt_enable_no_resched();
+}
+
+
 // cr0 is a control register in the x86 family of processors.
 // Bit 16 of that register is WP - Write protect: Determines whether
 // the CPU can write to pages marked read-only
-struct page *enable_rw(void *ptr) {
-   struct page *tempPage;
-   
-   original_rw_mask = read_cr0() & WRITE_PROTECT_MASK;
-	write_cr0 (read_cr0() & (~ WRITE_PROTECT_MASK));
-   tempPage = virt_to_page(ptr);
-   pages_rw(tempPage, 1);
-
-   return tempPage;
-}
-
-void revert_rw(struct page *page) {
-   pages_ro(page, 1);
-	write_cr0 (read_cr0() | original_rw_mask); //TODO: change this to restore the previous flags instead of assume what the flags will be
-}
+// struct page *enable_rw(void *ptr) {
+// //   struct page *tempPage;
+// //  
+// //   preempt_disable();
+// //   barrier();
+// //
+// //   original_rw_mask = read_cr0() & WRITE_PROTECT_MASK;
+// 	write_cr0 (read_cr0() & (~ WRITE_PROTECT_MASK));
+// //   tempPage = virt_to_page(ptr);
+// //   pages_rw(tempPage, 1);
+// 
+//    //return tempPage;
+//    return NULL;
+// }
+// 
+// void revert_rw(struct page *page) {
+//    //pages_ro(page, 1);
+// 	write_cr0 (read_cr0() | original_rw_mask); //TODO: change this to restore the previous flags instead of assume what the flags will be
+// 
+//     //barrier();
+//     //preempt_enable_no_resched();
+// }
 
 // Replace the syscall specified by syscallNumber with the function
 // pointed to by hook.
 // Returns the previous function installed at that syscallNumber
-void *hookSyscall(unsigned int syscallNumber, void *hook) {
-   void *previous;   // The previous syscall installed in the table
-   
-   if (hook == NULL) {
-		printError("attempted to hook system call to a NULL location.\n");
-		return NULL;
-	}
-   struct page *page = enable_rw(syscallTable);
-	previous = syscallTable[syscallNumber];
-	syscallTable[syscallNumber] = hook;
-   revert_rw(page);
-
-	return previousSyscallInstalledInTheTable;
-}
+//void *hookSyscall(unsigned int syscallNumber, void *hook) {
+//   void *previous;   // The previous syscall installed in the table
+//   
+//   if (hook == NULL) {
+//		printError("attempted to hook system call to a NULL location.\n");
+//		return NULL;
+//	}
+//   struct page *page = enable_rw(syscallTable);
+//	previous = syscallTable[syscallNumber];
+//	syscallTable[syscallNumber] = hook;
+//   revert_rw(page);
+//
+//	return previous;
+//}
 
 /*
 0. Write your replacement function
@@ -69,11 +97,12 @@ void *hookSyscall(unsigned int syscallNumber, void *hook) {
 // 'replacement'. Returns 
 void getHijackBytes(void *hijackDestination, /* out */ char *bytes) {
 	static char hijackBytesStub[NUM_HIJACK_BYTES] =
-			"\xb8\x00\x00\x00\x00"  /* movl   $0,%eax */
-			"\xff\xe0"              /* jmp    *%eax   */
+         "\x68\x00\x00\x00\x00\xc3"
+			//"\xb8\x00\x00\x00\x00"  /* movl   $0,%eax */
+			//"\xff\xe0"              /* jmp    *%eax   */
 			;
-	strncpy(bytes, hijackBytesStub, NUM_HIJACK_BYTES);
-	*(long *) &bytes[1] = (long) hijackDestination;
+	memcpy(bytes, hijackBytesStub, NUM_HIJACK_BYTES);
+	*(unsigned long *) &bytes[1] = (unsigned long) hijackDestination;
 }
 
 /*void writeHijackBytes(void *address, char *replacementBytes) {
@@ -86,15 +115,19 @@ void writeHijackBytes(void *original, char *replacementBytes, /* out */ char *pr
    struct page *page;
    
    address = (char *) original;
+   printk("Writing hijack bytes to %p\n", address);
 
    for (i = 0; i < NUM_HIJACK_BYTES; i++) {
+      printk("Original byte %d: 0x%x\n", i, (*(unsigned int *)address) & 0xFF);
       if (previousBytes != NULL) {
          *previousBytes = *address;
          previousBytes++;
       }
-      page = enable_rw(address);
+      //page = enable_rw(address);
+      unsigned long o_cr0 = disable_wp();
       *address = *replacementBytes;
-      revert_rw(page);
+      restore_wp(o_cr0);
+      //revert_rw(page);
       address++;
       replacementBytes++;
    }

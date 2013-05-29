@@ -6,9 +6,9 @@
 // Dev name as it appears in /proc/devices  
 #define DEVICE_NAME "rootkitLog" 
 
-#define NUM_HIJACK_BYTES   7
+#define NUM_HIJACK_BYTES   6
 
-void *hookSyscall(unsigned int syscallNumber, void *hook);
+//void *hookSyscall(unsigned int syscallNumber, void *hook);
 
 void getHijackBytes(void *hijackDestination, /* out */ char *bytes);
 
