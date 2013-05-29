@@ -17,48 +17,19 @@ void (*pages_ro)(struct page *page, int numpages) = (void *) PAGES_RO;
 
 unsigned long original_rw_mask;
 
-inline unsigned long disable_wp ( void )
-{
-    unsigned long cr0;
-
-    preempt_disable();
-    barrier();
-
-    cr0 = read_cr0();
-    write_cr0(cr0 & ~X86_CR0_WP);
-    return cr0;
-}
-
-inline void restore_wp ( unsigned long cr0 )
-{
-    write_cr0(cr0);
-
-    barrier();
-    preempt_enable_no_resched();
-}
-
-
 // cr0 is a control register in the x86 family of processors.
 // Bit 16 of that register is WP - Write protect: Determines whether
 // the CPU can write to pages marked read-only
-struct page *enable_rw(void *ptr) {
-   //struct page *tempPage;
-  
+void enable_rw(void *ptr) {
    preempt_disable();
    barrier();
 
    original_rw_mask = read_cr0() & WRITE_PROTECT_MASK;
 	write_cr0 (read_cr0() & (~ WRITE_PROTECT_MASK));
-//   tempPage = virt_to_page(ptr);
-//   pages_rw(tempPage, 1);
-
-   //return tempPage;
-   return NULL;
 }
 
-void revert_rw(struct page *page) {
-   //pages_ro(page, 1);
-	write_cr0 (read_cr0() | original_rw_mask); //TODO: change this to restore the previous flags instead of assume what the flags will be
+void revert_rw(void) {
+	write_cr0 (read_cr0() | original_rw_mask);
 
    barrier();
    preempt_enable_no_resched();
@@ -74,10 +45,10 @@ void *hookSyscall(unsigned int syscallNumber, void *hook) {
 		printError("attempted to hook system call to a NULL location.\n");
 		return NULL;
 	}
-   struct page *page = enable_rw(syscallTable);
+   enable_rw(syscallTable);
 	previous = syscallTable[syscallNumber];
 	syscallTable[syscallNumber] = hook;
-   revert_rw(page);
+   revert_rw();
 
 	return previous;
 }
@@ -91,15 +62,13 @@ void *hookSyscall(unsigned int syscallNumber, void *hook) {
 
  */
 
-// Method inspired by http://www.selfsecurity.org/technotes/silvio/kernel-hijack.txt
+// Method inspired by http://www.selfsecurity.org/technotes/silvio/kernel-hijack.txt and
+// http://www.poppopret.org/?p=251  
 // Hijack the function pointed to by 'function' and replaces it with a jump to
 // 'replacement'. Returns 
 void getHijackBytes(void *hijackDestination, /* out */ char *bytes) {
-	static char hijackBytesStub[NUM_HIJACK_BYTES] =
-         "\x68\x00\x00\x00\x00\xc3"
-			//"\xb8\x00\x00\x00\x00"  /* movl   $0,%eax */
-			//"\xff\xe0"              /* jmp    *%eax   */
-			;
+   // push $addr; ret
+	static char hijackBytesStub[NUM_HIJACK_BYTES] = "\x68\x00\x00\x00\x00\xc3";
 	memcpy(bytes, hijackBytesStub, NUM_HIJACK_BYTES);
 	*(unsigned long *) &bytes[1] = (unsigned long) hijackDestination;
 }
@@ -118,11 +87,9 @@ void writeHijackBytes(void *original, char *replacementBytes, /* out */ char *pr
          *previousBytes = *address;
          previousBytes++;
       }
-      page = enable_rw(address);
-      //unsigned long o_cr0 = disable_wp();
+      enable_rw(address);
       *address = *replacementBytes;
-      //restore_wp(o_cr0);
-      revert_rw(page);
+      revert_rw();
       address++;
       replacementBytes++;
    }
