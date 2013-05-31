@@ -62,7 +62,10 @@ static ssize_t receiveWrite(struct file *file, const char *userBuffer, size_t le
 		return -EINVAL;
 	}
 
-	int wasThereAProblem = (copy_from_user(kernelBuffer, userBuffer, len) == 0);
+	// copy_from_user - http://www.ibm.com/developerworks/library/l-kernel-memory-access/  http://www.gnugeneration.com/mirrors/kernel-api/r4343.html
+
+	int resultOfCopyFromUser = copy_from_user(kernelBuffer, userBuffer, len);
+	int wasThereAProblem = (resultOfCopyFromUser != 0);
 	if (wasThereAProblem) {
 		printError("Sorry, issue with copying some data from user\n");
 		return -EINVAL;
