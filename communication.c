@@ -15,6 +15,7 @@
 // Constants
 #define PARENT_PROC_ENTRY NULL
 
+//TODO: rename this
 static const char *PROC_FILE_NAME = "proc_file_name";
 
 mode_t mode = 0222; // write only
