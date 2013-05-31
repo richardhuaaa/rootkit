@@ -1,6 +1,9 @@
 #include <linux/proc_fs.h>
 #include <linux/fs.h>
 #include <linux/module.h>
+#include <asm/uaccess.h>  //for put_user / get_user
+#include <linux/user.h>
+
 #include "communication.h"
 #include "common.h"
 
@@ -48,8 +51,25 @@ void communication_exit(void) {
 	remove_proc_entry(PROC_FILE_NAME, PARENT_PROC_ENTRY);
 }
 
-static ssize_t receiveWrite(struct file *file, const char *buff, size_t len, loff_t *off) {
-	printInfo("<1>Sorry, this operation isn't supported.\n");
-	return -EINVAL;
+#define ROOTKIT_BUFFER_LENGTH 100
+
+static ssize_t receiveWrite(struct file *file, const char *userBuffer, size_t len, loff_t *off) {
+	char kernelBuffer[ROOTKIT_BUFFER_LENGTH];
+
+	if (len >= ROOTKIT_BUFFER_LENGTH) {
+		printError("Sorry, too much data was written to proc\n");
+		return -EINVAL;
+	}
+
+	int wasThereAProblem = (copy_from_user(kernelBuffer, userBuffer, len) == 0);
+	if (wasThereAProblem) {
+		printError("Sorry, issue with copying some data from user\n");
+		return -EINVAL;
+	}
+
+	kernelBuffer[len] = '\0';
+	printInfo("%s", kernelBuffer);
+
+	return len;
 }
 
