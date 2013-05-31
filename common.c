@@ -39,13 +39,13 @@ void revert_rw(void) {
 // pointed to by hook.
 // Returns the previous function installed at that syscallNumber
 void *hookSyscall(unsigned int syscallNumber, void *hook) {
-   void *previous;   // The previous syscall installed in the table
-   
-   if (hook == NULL) {
+	void *previous;
+
+	if (hook == NULL) {
 		printError("attempted to hook system call to a NULL location.\n");
 		return NULL;
 	}
-   enable_rw(syscallTable);
+	enable_rw(syscallTable);
 	previous = syscallTable[syscallNumber];
 	syscallTable[syscallNumber] = hook;
    revert_rw();
@@ -77,7 +77,7 @@ void writeHijackBytes(void *original, char *replacementBytes, /* out */ char *pr
    int i;
    char *address;
    struct page *page;
-   
+
    address = (char *) original;
    printk("Writing hijack bytes to %p\n", address);
 

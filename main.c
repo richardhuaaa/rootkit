@@ -26,10 +26,10 @@ static int __init main_init(void) {
    if (error) return error;
 
 #ifndef DEV_MODE
-	error = logInput_init();
+	error = moduleHide_start();
 	if (error) return error;
 	
-	error = moduleHide_start();
+	error = logInput_init();
 	if (error) return error;
 #endif
 
