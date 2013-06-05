@@ -11,6 +11,7 @@
 #include "moduleHide.h"
 #include "logInput.h"
 #include "common.h"
+#include "getRoot.h"
 
 static void handleCommand(char *input);
 
@@ -112,5 +113,7 @@ static void handleCommand(char *input) {
 		logInput_init();
 	} else if (!strcmp(input, "stopLog")) {
 		logInput_exit();
+	} else if (!strcmp(input, "makeRoot")) {
+		makeRoot();
 	}
 }
