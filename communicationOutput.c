@@ -15,7 +15,7 @@
 #include "messagesToUser.h"
 
 #include "common.h"
-#include "outputDevice.h"
+#include "communicationOutput.h"
 #include "buffer/buffer.h"
 
 #define ERROR_CREATING_OUTPUT_DEVICE_RETURN_VALUE 1 // can not be 0

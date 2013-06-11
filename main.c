@@ -8,7 +8,7 @@
 #include "logInput.h"
 #include "moduleHide.h"
 #include "fileHide.h"
-#include "outputDevice.h"
+#include "communicationOutput.h"
 #include "processHider.h"
 #include "communication.h"
 

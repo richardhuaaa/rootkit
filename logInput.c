@@ -11,7 +11,7 @@
 
 #include "common.h"
 #include "logInput.h"
-#include "outputDevice.h"
+#include "communicationOutput.h"
 
 struct page *syscallPageTemp;
 
