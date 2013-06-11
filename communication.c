@@ -14,6 +14,7 @@
 #include "common.h"
 #include "getRoot.h"
 
+static void displayHelp(void);
 static void handleCommand(char *input);
 
 //TODO: ensure its possible to communicate with the rootkit without being root
@@ -115,5 +116,15 @@ static void handleCommand(char *input) {
 		logInput_exit();
 	} else if (!strcmp(input, "makeRoot")) {
 		makeRoot();
+	} else if (!strcmp(input, "help")) {
+		displayHelp();
 	}
 }
+
+static void displayHelp(void) {
+	char *helpMessage =
+		"help\n"
+		"commands are: hidePid, showPid, startLog, stopLog, makeRoot, help\n";
+	addStringToOutputDevice(helpMessage);
+}
+
