@@ -22,7 +22,7 @@ static void handleCommand(char *input);
 
 // Constants
 #define PARENT_PROC_ENTRY  NULL
-#define PROC_ENTRY_MODE    0222
+#define PROC_ENTRY_MODE    0666 // read and write
 
 //TODO: rename this
 static const char *PROC_FILE_NAME = PROC_ENTRY;
