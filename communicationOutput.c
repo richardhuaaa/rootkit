@@ -1,6 +1,3 @@
-// TODO: separate part which puts data to this device e.g. add to buffer etc.. which is planned to be here.
-
-
 // based on http://www.faqs.org/docs/kernel/x571.html /  http://www.tldp.org/LDP/lkmpg/2.6/html/x569.html
 
 //TODO: increase buffer size / use tty..
@@ -22,79 +19,11 @@
 
 
 // Function prototypes
-static int device_open(struct inode *, struct file *);
-static int device_release(struct inode *, struct file *);
-static ssize_t device_read(struct file *, char *, size_t, loff_t *);
-static ssize_t device_write(struct file *, const char *, size_t, loff_t *);
-
-#define SUCCESS 0
-#define CLASS_NAME "outputDeviceClass"
-#define DEVICE_NAME_IN_DEV_DIR DEVICE_NAME
-
-
-struct class *outputDeviceClass;
-struct device *outputDeviceDevice; // TODO: rename these..
-
-
-/* Global variables are declared as static, so are global within the file. */
-
-static int Major;            /* Major number assigned to our device driver */
-static int isDeviceAlreadyOpenSoFurtherOpensShouldFail = 0;
-
-static struct file_operations fops = {
-	.read = device_read, 
-	.write = device_write,
-	.open = device_open,
-	.release = device_release
-};
 
 static struct buffer bufferOfDataWaitingToBeSentToUser_;
 static Buffer bufferOfDataWaitingToBeSentToUser = &bufferOfDataWaitingToBeSentToUser_;
 
 // Functions
-/* 
-detection: 
-The device will be registered e.g. a slot in the file table will be there. The only way around this is to perhaps use a large enough number random number that is hard to find
-Though won't work well..
-*/
-int outputDevice_init(void) {	
-	bufferOfDataWaitingToBeSentToUser_ = createBuffer();
-
-	// Register the character device and get the major descriptor number
-	Major = register_chrdev(0, DEVICE_NAME, &fops);
-
-	if (Major < 0) {
-		printInfo("Registering the character device failed with %d\n", Major);
-		return Major;
-	}
-	
-	// create the device class / registering in /dev is done for convience. If wanting to hide the rootkit this might not be done.. Though can hide the file there..
-	outputDeviceClass = class_create(THIS_MODULE, CLASS_NAME);
-	if (IS_ERR(outputDeviceClass)) {
-		return PTR_ERR(outputDeviceClass);
-	}
-	
-	outputDeviceDevice = device_create(outputDeviceClass, NULL, MKDEV(Major, 0), NULL, DEVICE_NAME_IN_DEV_DIR);
-	if (IS_ERR(outputDeviceDevice)) {
-		printError("failed to create device '%s_%s'\n", CLASS_NAME, DEVICE_NAME); // TODO: add print error function etc..
-		return PTR_ERR(outputDeviceDevice);
-	}
-
-	/*
-	printInfo("<1>I was assigned major number %d.  To talk to\n", Major);
-	printInfo("<1>the driver, create a dev file with\n");
-	printInfo("'mknod /dev/hello c %d 0'.\n", Major);
-	*/
-	printInfo("created a device: %s\n", DEVICE_NAME_IN_DEV_DIR);
-	//printInfo("<1>Try various minor numbers.  Try to cat and echo to\n"); // minor numbers are only used for
-	//printInfo("the device file.\n");
-	
-	addStringToOutputDevice("Log\n");
-
-	return 0;
-}
-
-
 void addCharacterToOutputDevice(char ch) {
 	addToBuffer(bufferOfDataWaitingToBeSentToUser, ch);
 }
@@ -107,51 +36,11 @@ void addStringToOutputDevice(char *str) {
 }
 
 
-// the file may remain until released (see device_release) 
-void outputDevice_exit(void) {
-	device_destroy(outputDeviceClass, MKDEV(Major, 0));
-	class_destroy(outputDeviceClass);
-	
-	unregister_chrdev(Major, DEVICE_NAME);
-}  
-
-
-// Methods
-static int device_open(struct inode *inode, struct file *file) {
-	if (isDeviceAlreadyOpenSoFurtherOpensShouldFail) {
-		return -EBUSY;
-	}
-	 
-	isDeviceAlreadyOpenSoFurtherOpensShouldFail++;
-		
-	try_module_get(THIS_MODULE);
-
-	// perhaps reset read position in buffer
-	
-	return SUCCESS;
-}
-
-
-//  Called when a process closes the device file.
-static int device_release(struct inode *inode, struct file *file) {
-	isDeviceAlreadyOpenSoFurtherOpensShouldFail --;     /* We're now ready for our next caller */
-	// see  http://www.tldp.org/LDP/lkmpg/2.6/html/x569.html  "4.1.4. Unregistering A Device"
-	module_put(THIS_MODULE); //  Decrement the usage count, or else once you opened the file, you'll never get get rid of the module. 
-
-	return 0;
-}
-
-
 /* Called when a process, which already opened the dev file, attempts to
 	read from it.
 */
-static ssize_t device_read(struct file *filp,
-	char *buffer,    /* The buffer to fill with data */
-	size_t length,   /* The length of the buffer     */
-	loff_t *offset)  /* Our offset in the file       */
-{
-	// Number of bytes actually written to the buffer
-	int bytes_read = 0;
+ssize_t sendOutputToUser(struct file *filp, char *userBuffer, size_t length, loff_t *offset) {
+	int bytes_read = 0; // Number of bytes actually written to the buffer (TODO: rename this)
 	
 	char ch = getAndRemoveFromBuffer(bufferOfDataWaitingToBeSentToUser);
 
@@ -161,10 +50,10 @@ static ssize_t device_read(struct file *filp,
 		* assignment won't work.  We have to use put_user which copies data from
 		* the kernel data segment to the user data segment. */
 		
-		put_user(ch, buffer);
+		put_user(ch, userBuffer);
 		
-		buffer++;
-		length--;
+		userBuffer++;
+		length--; //TODO: merge with bytes read
 		bytes_read++;
 		
 		ch = getAndRemoveFromBuffer(bufferOfDataWaitingToBeSentToUser);
@@ -172,11 +61,4 @@ static ssize_t device_read(struct file *filp,
 
 	/* Most read functions return the number of bytes put into the buffer */
 	return bytes_read;
-}
-
-
-/*  Called when a process writes to dev file: echo "hi" > /dev/hello */
-static ssize_t device_write(struct file *file, const char *buff, size_t len, loff_t *off) {
-	printInfo("<1>Sorry, this operation isn't supported.\n");
-	return -EINVAL;
 }

