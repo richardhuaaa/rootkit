@@ -37,11 +37,11 @@ uninstallSilently:
 # 	mkdir "deployment" -p
 # 	cp deploymentTemplate/*.sh blank.ko  "deployment/"
 
-all: outputFileName
+all: $(outputFileName)
 	mkdir "deployment" -p
 	cp deploymentTemplate/*.sh $(outputFileName) "deployment/"
 	
-outputFileName:
+$(outputFileName):
 	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(BUILDDIR) modules
 	
 clean:
