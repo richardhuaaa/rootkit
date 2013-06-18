@@ -34,13 +34,14 @@ struct notifier_block notificationOnProcessExit = {
 
 //TODO: move this higher in the file
 int processHider_init(void) {
-	// this will fail if profiling is disabled
+	int error;
 	collection = createHiddenProcessCollection();
 	if (collection == NULL) {
 		return -1;
 	}
 
-	profile_event_register(PROFILE_TASK_EXIT, &notificationOnProcessExit);
+	// this will fail if profiling is disabled
+	error = profile_event_register(PROFILE_TASK_EXIT, &notificationOnProcessExit);
 	if (error != 0) { //todo : extract function..
 		destoryHiddenProcessCollection(collection);
 		return error;

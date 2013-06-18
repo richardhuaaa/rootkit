@@ -28,23 +28,37 @@ HiddenProcessCollection createHiddenProcessCollection(void) {
 		return NULL;
 	}
 
-	// isInUse is set to 0 due to use of kcalloc
+	// initialise any required elements
+	// assumes isInUse is set to 0 due to calloc
 
 	return result;
 }
 
 int isHiddenProcessCollectionFull(HiddenProcessCollection collection) {
 	int freeIndex = getIndexOfFreeSpot(collection);
-	return freeIndex != NO_ENTRIES_AVAILABLE;
+
+	return freeIndex == NO_ENTRIES_AVAILABLE;
 }
 
-static struct entry *getEntry(HiddenProcessCollection collection, int index) {
-	return &(collection->restorableTasks[index]);
+// returns null if the entry is not in use
+static struct entry *getEntryNotingTheResultMayBeNull(HiddenProcessCollection collection, int index) {
+	struct entry *entry;
+	struct entry *result;
+
+	entry = &(collection->restorableTasks[index]);;
+
+	if (!entry->isInUse) {
+		result = NULL;
+	} else {
+		result = entry;
+	}
+
+	return result;
 }
 
 static int isTaskInUse(HiddenProcessCollection collection, int index) {
-	struct entry *entry = getEntry(collection, index);
-	return entry->isInUse;
+	struct entry *entry = getEntryNotingTheResultMayBeNull(collection, index);
+	return entry != NULL && entry->isInUse;
 }
 
 static int getIndexOfFreeSpot(HiddenProcessCollection collection) {
@@ -60,8 +74,10 @@ static int getIndexOfFreeSpot(HiddenProcessCollection collection) {
 static int getIndexOfEntryWithPid(HiddenProcessCollection collection, int pid) {
 	int i;
 	for (i = 0; i < MAXIMUM_NUMBER_OF_ENTRIES; i++) {
-		struct entry *entry = getEntry(collection, i);
-		return entry->isInUse && entry->restorableHiddenTask->pidNumber == pid;
+		struct entry *entry = getEntryNotingTheResultMayBeNull(collection, i);
+		if (entry != NULL && entry->restorableHiddenTask->pidNumber == pid) {
+			return i;
+		}
 	}
 	return NOT_FOUND;
 }
@@ -72,12 +88,16 @@ int isPidInCollection(HiddenProcessCollection collection, int pid) {
 
 static RestorableHiddenTask removeEntry(HiddenProcessCollection collection, int index) {
 	struct entry *entry;
-	if (index <= 0) {
-		printError("attempting to remove an entry that does not exist");
+
+	if (index < 0) {
+		printError("attempted to remove an invalid entry\n");
 		return NULL;
 	}
 
-	entry = getEntry(collection, index);
+	entry = getEntryNotingTheResultMayBeNull(collection, index);
+	if (entry == NULL) {
+		return NULL;
+	}
 	entry->isInUse = 0;
 	return entry->restorableHiddenTask;
 }
@@ -90,8 +110,10 @@ RestorableHiddenTask removePidFromCollection(HiddenProcessCollection collection,
 static int getIndexOfEntryWithTask(HiddenProcessCollection collection, void *task) {
 	int i;
 	for (i = 0; i < MAXIMUM_NUMBER_OF_ENTRIES; i++) {
-		struct entry *entry = getEntry(collection, i);
-		return entry != NULL && entry->restorableHiddenTask->task == task;
+		struct entry *entry = getEntryNotingTheResultMayBeNull(collection, i);
+		if (entry != NULL && entry->restorableHiddenTask->task == task) {
+			return i;
+		}
 	}
 	return NOT_FOUND;
 }
@@ -131,8 +153,8 @@ void destoryHiddenProcessCollection(HiddenProcessCollection collection) {
 static int getIndexOfAnyTaskThatIsHidden(HiddenProcessCollection collection) {
 	int i;
 	for (i = 0; i < MAXIMUM_NUMBER_OF_ENTRIES; i++) {
-		struct entry *entry = getEntry(collection, i);
-		if (entry->isInUse) {
+		struct entry *entry = getEntryNotingTheResultMayBeNull(collection, i);
+		if (entry != NULL) {
 			return i;
 		}
 	}

@@ -50,10 +50,11 @@ deployment/%.sh: deploymentTemplate/%.sh
 	@mkdir "deployment" -p
 	cp "$(<)" "$(@)" 
 	
-deployment/%.ko: %.ko all
+deployment/%.ko: %.ko 
 	@mkdir "deployment" -p
 	cp "$(<)" "$(@)" 
-	
+
+%.ko: all
 	
 clean:
 	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(BUILDDIR) clean
