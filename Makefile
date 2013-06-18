@@ -29,7 +29,7 @@ BUILDDIR = $(shell pwd)
 
 default: all setupDeployment
 
-install: uninstallSilently all
+install: uninstallSilently setupDeployment
 	./deployment/install.sh
 
 uninstall:
@@ -37,7 +37,7 @@ uninstall:
 	
 uninstallSilently:
 	-@echo "exit" | nc localhost 9000 #TODO: don't hard code this
-	-@rmmod $(moduleName) 2> /dev/null 
+	-@rmmod $(outputFileName) 2> /dev/null 
 
 
 all:
