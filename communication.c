@@ -77,15 +77,16 @@ static ssize_t receiveWrite(struct file *file, const char *userBuffer, size_t le
 		return -EINVAL;
 	}
 
-	// strncpy_from_user - http://www.ibm.com/developerworks/library/l-kernel-memory-access/  http://www.gnugeneration.com/mirrors/kernel-api/r4343.html
-
-	int result = strncpy_from_user(kernelBuffer, userBuffer, len);
-	if (result < 0) {
-		return result;
+	{
+		// strncpy_from_user - http://www.ibm.com/developerworks/library/l-kernel-memory-access/  http://www.gnugeneration.com/mirrors/kernel-api/r4343.html
+		int result = strncpy_from_user(kernelBuffer, userBuffer, len);
+		if (result < 0) {
+			return result;
+		}
+		kernelBuffer[len] = '\0';
 	}
-	kernelBuffer[len] = '\0';
 
-	printInfo("%s-", kernelBuffer);
+	printInfo("command: %s", kernelBuffer);
 
 	handleCommand(kernelBuffer);
 

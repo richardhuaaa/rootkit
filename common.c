@@ -91,7 +91,7 @@ void getHijackBytes(void *hijackDestination, /* out */ char *bytes) {
 void writeHijackBytes(void *original, char *replacementBytes, /* out */ char *previousBytes) {
    int i;
    char *address;
-   struct page *page;
+   //struct page *page;
 
    address = (char *) original;
    printk("Writing hijack bytes to %p\n", address);
