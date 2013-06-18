@@ -6,4 +6,5 @@
 *.order
 *.symvers
 environmentSpecificOptions.h
+deployment/*
 *~
