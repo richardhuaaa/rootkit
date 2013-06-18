@@ -163,11 +163,7 @@ static void restoreTaskGivenRcuLockIsHeldAndFreeEntry(RestorableHiddenTask entry
 static void unhideAllHiddenTasksGivenLockIsHeld(void) {
 	RestorableHiddenTask entry = removeAnyHiddenTask(collection);
 	while (entry != NULL) {
-		rcu_read_lock();
-
 		restoreTaskGivenRcuLockIsHeldAndFreeEntry(entry);
-		rcu_read_unlock();
-
 		entry = removeAnyHiddenTask(collection);
 	}
 }
