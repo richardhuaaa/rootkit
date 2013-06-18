@@ -29,7 +29,7 @@ BUILDDIR = $(shell pwd)
 
 #todo: automatically run buffer test
 
-default: all 
+default: all setupDeployment
 
 install: uninstallSilently all
 	./deployment/install.sh
@@ -42,7 +42,8 @@ uninstallSilently:
 	-@rmmod $(moduleName) 2> /dev/null 
 
 
-all: $(outputFileName) setupDeployment
+all: $(outputFileName)
+	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(BUILDDIR) modules
 
 setupDeployment: $(deploymentFiles)
 	
@@ -55,8 +56,8 @@ deployment/%.ko: %.ko $(outputFileName)
 	cp "$(<)" "$(@)" 
 	
 
-$(outputFileName): $(allSourceFilesAndHeaders)
-	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(BUILDDIR) modules
+$(outputFileName): #$(allSourceFilesAndHeaders) #TODO: rename this
+	
 	
 clean:
 	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(BUILDDIR) clean
