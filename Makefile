@@ -31,7 +31,7 @@ uninstall:
 	
 uninstallSilently:
 	-@echo "exit" | nc localhost 9000 #TODO: don't hard code this
-	-@rmmod $(moduleName)
+	-@rmmod $(moduleName) 2> /dev/null 
 
 # setupDeployment: bulildModule
 # 	mkdir "deployment" -p
