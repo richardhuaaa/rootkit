@@ -11,6 +11,9 @@
 
 #define WRITE_PROTECT_MASK 0x10000
 
+#ifndef CONFIG_KALLSYMS
+	#error "CONFIG_KALLSYMS must be used for the kernel. Otherwise use generate environment options and change the code to use the address"
+#endif
 
 
 
@@ -44,8 +47,14 @@ void revert_rw(void) {
 // Returns the previous function installed at that syscallNumber
 void *hookSyscall(unsigned int syscallNumber, void *hook) {
 	void **syscallTable = (void **) kallsyms_lookup_name("sys_call_table");
+	//printInfo("Syscall table is located at: %p\n", (void *) SYSCALL_TABLE);
 
 	void *previous;
+
+	if (syscallTable == NULL) {
+		printError("sys call table was null\n");
+		return NULL;
+	}
 
 	if (hook == NULL) {
 		printError("attempted to hook system call to a NULL location.\n");

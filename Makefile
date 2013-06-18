@@ -36,7 +36,7 @@ uninstallSilently:
 # 	mkdir "deployment" -p
 # 	cp deploymentTemplate/*.sh blank.ko  "deployment/"
 
-all: environmentSpecificOptions.h
+all: #environmentSpecificOptions.h
 	mkdir "deployment" -p
 	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(BUILDDIR) modules
 	cp deploymentTemplate/*.sh blank.ko "deployment/"
@@ -45,8 +45,8 @@ clean:
 	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(BUILDDIR) clean
 	rm -r "deployment"
 
-environmentSpecificOptions.h: 	 # we probably should avoid the need to be root to compile
-	./getEnvironmentSpecificOptions.sh > environmentSpecificOptions.h
+#environmentSpecificOptions.h: 	 # we probably should avoid the need to be root to compile
+#	./getEnvironmentSpecificOptions.sh > environmentSpecificOptions.h
 
 
 	
