@@ -129,7 +129,7 @@ RestorableHiddenTask removeTaskFromCollection(HiddenProcessCollection collection
 
 void addHiddenProcessToCollection(HiddenProcessCollection collection, RestorableHiddenTask restorableHiddenTask) {
 	int index = getIndexOfFreeSpot(collection);
-	if (index <= 0) {
+	if (index < 0) {
 		printError("failed to hidden process to collection as it was full. This should have been checked earlier\n");
 		return;
 	}
