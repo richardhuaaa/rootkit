@@ -120,6 +120,8 @@ static void handleCommand(char *input) {
 	} else if (!strcmp(input, "help")) {
 		displayHelp();
 	}
+
+	//TODO: add a command to display hidden pids
 }
 
 static void displayHelp(void) {
