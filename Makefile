@@ -29,6 +29,9 @@ environmentSpecificOptions.h: 	 # we probably should avoid the need to be root t
 	./getEnvironmentSpecificOptions.sh > environmentSpecificOptions.h
 	
 
+deploy: all
+	cp deploymentTemplate/*.sh blank.ko  "deployment/"
+	
 install: all uninstallSilently
 	insmod ./$(moduleName).ko
 
