@@ -11,9 +11,13 @@
 
 #define WRITE_PROTECT_MASK 0x10000
 
-void **syscallTable = (void **) SYSCALL_TABLE;
-void (*pages_rw)(struct page *page, int numpages) = (void *) PAGES_RW;
-void (*pages_ro)(struct page *page, int numpages) = (void *) PAGES_RO;
+
+
+
+//TODO: ensure these are not null
+//void **syscallTable = (void **) SYSCALL_TABLE;
+//void (*pages_rw)(struct page *page, int numpages) = (void *) PAGES_RW;
+//void (*pages_ro)(struct page *page, int numpages) = (void *) PAGES_RO;
 
 unsigned long original_rw_mask;
 
@@ -39,6 +43,8 @@ void revert_rw(void) {
 // pointed to by hook.
 // Returns the previous function installed at that syscallNumber
 void *hookSyscall(unsigned int syscallNumber, void *hook) {
+	void **syscallTable = (void **) kallsyms_lookup_name("sys_call_table");
+
 	void *previous;
 
 	if (hook == NULL) {
