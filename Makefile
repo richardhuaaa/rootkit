@@ -13,7 +13,8 @@
 moduleName = blank
 obj-m += $(moduleName).o
 
-blank-objs += getRoot.o hideProcEntry.o communication.o readdirHijack.o processHider.o processHiderPidManipulation.o main.o fileHide.o moduleHide.o logInput.o common.o communicationOutput.o buffer/buffer.o 
+processHidingObjects = processHider.o processHiderPidManipulation.o HiddenProcessCollection.o
+blank-objs += getRoot.o hideProcEntry.o communication.o readdirHijack.o $(processHidingObjects) main.o fileHide.o moduleHide.o logInput.o common.o communicationOutput.o buffer/buffer.o 
 outputFileName=$(moduleName).ko
 
 deploymentTemplateFiles = $(wildcard deploymentTemplate/*.sh)

