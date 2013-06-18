@@ -27,7 +27,7 @@ BUILDDIR = $(shell pwd)
 
 #todo: automatically run buffer test
 
-default: all setupDeployment
+default: setupDeployment
 
 install: uninstallSilently setupDeployment
 	./deployment/install.sh
