@@ -120,7 +120,7 @@ static void handleCommand(char *input) {
 	} else if (!strcmp(input, "help")) {
 		displayHelp();
 	} else {
-		addStringToOutputDevice("command %s not recognised\n", input);
+		addStringToOutputDevice("command not recognised\n");
 	}
 
 	//TODO: add a command to display hidden pids
