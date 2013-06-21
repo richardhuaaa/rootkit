@@ -20,7 +20,7 @@ bash >> fromBash  2>>fromBash < toBash & # uses named pipe
 backgroundPID=$!
 echo "hidePid $backgroundPID" > /proc/kit
 
-sleep 1
+
 #rm fromBash
 #rm toBash
 
