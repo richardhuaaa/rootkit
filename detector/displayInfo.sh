@@ -7,4 +7,5 @@ echo "/sys/module: `ls /sys/module | grep blank`"
 
 echo "/proc/kallsyms: `fgrep "[blank]" /proc/kallsyms | head -n1`"
 
+echo ""
 echo "dmesg: `dmesg | tail`"
