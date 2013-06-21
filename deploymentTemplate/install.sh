@@ -3,7 +3,7 @@
 directory=`dirname "$0"`
 cd "$directory"
 
-ls | egrep -v "\.(ko|sh)"  && exit #TODO: print a message e.g. won't delete unexpected files
+ls | egrep -v "(\.ko|\.sh|fromBash|toBash)"  && exit #TODO: print a message e.g. won't delete unexpected files
 
 
 sudo insmod blank.ko &&
