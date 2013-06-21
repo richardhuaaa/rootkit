@@ -107,16 +107,16 @@ static void handleCommand(char *input) {
 		hideProcess(arg);
 	} else if (sscanf(input, "showPid %d", &arg) == 1) {
 		showProcess(arg);
-	} else if (!strcmp(input, "showMod")) {
+	} else if (!strcmp(input, "showModule")) {
 		moduleHide_stop();
-	} else if (!strcmp(input, "hideMod")) {
+	} else if (!strcmp(input, "hideModule")) {
 		moduleHide_start();
 	} else if (!strcmp(input, "startLog")) {
 		logInput_init();
 	} else if (!strcmp(input, "stopLog")) {
 		logInput_exit();
-	} else if (!strcmp(input, "makeRoot")) {
-		makeRoot();
+	} else if (!strcmp(input, "getRoot")) {
+		getRoot();
 	} else if (!strcmp(input, "help")) {
 		displayHelp();
 	} else {
@@ -129,7 +129,7 @@ static void handleCommand(char *input) {
 static void displayHelp(void) {
 	char *helpMessage =
 		"help\n"
-		"commands are: hidePid, showPid, startLog, stopLog, makeRoot, help\n";
+		"commands are: hidePid, showPid, startLog, stopLog, hideModule, showModule, getRoot, help\n";
 	addStringToOutputDevice(helpMessage);
 }
 

