@@ -37,7 +37,6 @@ uninstall:
 	-rmmod $(moduleName)
 	
 uninstallSilently:
-	-@echo "exit" | nc localhost 9000 #TODO: don't hard code this
 	-@rmmod $(outputFileName) 2> /dev/null 
 
 

