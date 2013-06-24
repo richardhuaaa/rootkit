@@ -34,9 +34,13 @@ install: uninstallSilently setupDeployment
 	./deployment/install.sh
 
 uninstall:
+	-echo "showModule" > /proc/kit
+	-echo "stopLog" > /proc/kit
 	-rmmod $(moduleName)
 	
 uninstallSilently:
+	-@echo "showModule" > /proc/kit
+	-@echo "stopLog" > /proc/kit
 	-@rmmod $(outputFileName) 2> /dev/null 
 
 
