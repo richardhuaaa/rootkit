@@ -94,10 +94,10 @@ void writeHijackBytes(void *original, char *replacementBytes, /* out */ char *pr
    //struct page *page;
 
    address = (char *) original;
-   printk("Writing hijack bytes to %p\n", address);
+   printInfo("Writing hijack bytes to %p\n", address);
 
    for (i = 0; i < NUM_HIJACK_BYTES; i++) {
-      printk("Original byte %d: 0x%x\n", i, (*(unsigned int *)address) & 0xFF);
+      printInfo("Original byte %d: 0x%x\n", i, (*(unsigned int *)address) & 0xFF);
       if (previousBytes != NULL) {
          *previousBytes = *address;
          previousBytes++;

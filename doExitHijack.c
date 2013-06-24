@@ -10,26 +10,26 @@ char hijackBytes[NUM_HIJACK_BYTES];
 char originalBytes[NUM_HIJACK_BYTES];
 
 void replacement_do_exit(long code) {
-   printk("Entered replacement function\n");
-   printk("Writing original bytes\n");
+   printInfo("Entered replacement function\n");
+   printInfo("Writing original bytes\n");
    writeHijackBytes(do_exit_ptr, originalBytes, NULL);
-   printk("Calling original function\n");
+   printInfo("Calling original function\n");
    // do_exit_ptr(code);
    do_exit(code);
-   printk("Writing back hijack function\n");
+   printInfo("Writing back hijack function\n");
    writeHijackBytes(do_exit_ptr, hijackBytes, NULL);
-   printk("Replacement completed successfully\n");
+   printInfo("Replacement completed successfully\n");
 }
 
 void hijack_do_exit() {
-   printk("Getting hijack bytes\n");
+   printInfo("Getting hijack bytes\n");
    getHijackBytes(replacement_do_exit, hijackBytes);
-   printk("Hijacking function\n");
+   printInfo("Hijacking function\n");
    writeHijackBytes(do_exit_ptr, hijackBytes, originalBytes);
-   printk("Hijack successful\n");
+   printInfo("Hijack successful\n");
 }
 
 void unhijack_do_exit() {
-   printk("Unhijacked\n");
+   printInfo("Unhijacked\n");
    writeHijackBytes(do_exit_ptr, originalBytes, NULL);
 }
