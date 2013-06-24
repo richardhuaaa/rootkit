@@ -7,5 +7,5 @@ echo "/sys/module: `ls /sys/module | grep blank`"
 
 echo "/proc/kallsyms: `fgrep "[blank]" /proc/kallsyms | grep "hideProcess" -w`"
 
-echo ""
-echo "dmesg: `dmesg | tail`"
+#echo ""
+#echo "dmesg: `dmesg | tail`"
