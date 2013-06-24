@@ -6,7 +6,7 @@
 // macros are used over functions to help work out the actual source of error if printf is called with the wrong arguments in the end
 
 
-#define BE_SILENT 0
+#define BE_SILENT 1
 
 #if BE_SILENT
 	#define printInfo(format, ...)
